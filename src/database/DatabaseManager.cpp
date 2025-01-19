@@ -12,78 +12,93 @@
 
 DatabaseManager::DatabaseManager(QObject *parent)
     : QObject(parent)
-    , m_isInitialized(false)
+    , configFilePath("config/database.conf")
+    , initialized(false)
+{
+}
+
+DatabaseManager::DatabaseManager(const QString& configPath, QObject *parent)
+    : QObject(parent)
+    , configFilePath(configPath)
+    , initialized(false)
 {
 }
 
 DatabaseManager::~DatabaseManager()
 {
-    if (m_db.isOpen()) {
-        m_db.close();
+    if (database.isOpen()) {
+        database.close();
+    }
+}
+
+void DatabaseManager::setConfigPath(const QString& path)
+{
+    if (!initialized) {
+        configFilePath = path;
+    } else {
+        qWarning() << "Cannot change config path after initialization";
     }
 }
 
 bool DatabaseManager::init()
 {
-    if (m_isInitialized) {
+    if (initialized) {
         return true;
     }
 
-    QString configPath = QDir::current().filePath("config/database.conf");
-
-    if (!QFile::exists(configPath)) {
-        qCritical() << "Database configuration file not found:" << configPath;
+    if (!QFile::exists(configFilePath)) {
+        qCritical() << "Database configuration file not found:" << configFilePath;
         return false;
     }
 
-    QSettings settings(configPath, QSettings::IniFormat);
+    QSettings settings(configFilePath, QSettings::IniFormat);
     settings.beginGroup("Database");
 
     QString hostname = settings.value("hostname", "localhost").toString();
-    QString database = settings.value("database", "jupiter_db").toString();
+    QString databaseName = settings.value("database", "jupiter_db").toString();
     QString username = settings.value("username", "root").toString();
     QString password = settings.value("password", "").toString();
     int port = settings.value("port", 3306).toInt();
 
     settings.endGroup();
 
-    if (hostname.isEmpty() || database.isEmpty() || username.isEmpty()) {
+    if (hostname.isEmpty() || databaseName.isEmpty() || username.isEmpty()) {
         qCritical() << "Missing required database configuration parameters";
         return false;
     }
 
-    m_db = QSqlDatabase::addDatabase("QMYSQL");
-    m_db.setHostName(hostname);
-    m_db.setDatabaseName(database);
-    m_db.setUserName(username);
-    m_db.setPassword(password);
-    m_db.setPort(port);
+    database = QSqlDatabase::addDatabase("QMYSQL");
+    database.setHostName(hostname);
+    database.setDatabaseName(databaseName);
+    database.setUserName(username);
+    database.setPassword(password);
+    database.setPort(port);
 
-    if (!m_db.open()) {
-        qCritical() << "Failed to open database:" << m_db.lastError().text();
+    if (!database.open()) {
+        qCritical() << "Failed to open database:" << database.lastError().text();
         return false;
     }
 
     if (!createTablesIfNotExist()) {
         qCritical() << "Failed to create database tables";
-        m_db.close();
+        database.close();
         return false;
     }
 
-    m_isInitialized = true;
+    initialized = true;
     qInfo() << "Database initialized successfully";
     return true;
 }
 
 bool DatabaseManager::createTablesIfNotExist()
 {
-    if (!m_db.transaction()) {
+    if (!database.transaction()) {
         qCritical() << "Failed to start transaction for creating tables";
         return false;
     }
 
     try {
-        QSqlQuery query(m_db);
+        QSqlQuery query(database);
 
         if (!query.exec(DatabaseQueries::Create::USERS_TABLE)) {
             throw std::runtime_error("Failed to create users table: " + query.lastError().text().toStdString());
@@ -97,7 +112,7 @@ bool DatabaseManager::createTablesIfNotExist()
             throw std::runtime_error("Failed to create sessions table: " + query.lastError().text().toStdString());
         }
 
-        if (!m_db.commit()) {
+        if (!database.commit()) {
             throw std::runtime_error("Failed to commit table creation");
         }
 
@@ -106,20 +121,20 @@ bool DatabaseManager::createTablesIfNotExist()
     }
     catch (const std::exception& e) {
         qCritical() << "Error creating tables:" << e.what();
-        m_db.rollback();
+        database.rollback();
         return false;
     }
 }
 
 bool DatabaseManager::authenticateUser(const QString& username, const QString& password, quint32& userId)
 {
-    if (!m_db.transaction()) {
+    if (!database.transaction()) {
         qWarning() << "Failed to start transaction for user authentication";
         return false;
     }
 
     try {
-        QSqlQuery query(m_db);
+        QSqlQuery query(database);
         query.prepare(DatabaseQueries::Users::AUTHENTICATE);
         query.addBindValue(username);
 
@@ -139,7 +154,7 @@ bool DatabaseManager::authenticateUser(const QString& username, const QString& p
             throw std::runtime_error("Failed to update user status");
         }
 
-        if (!m_db.commit()) {
+        if (!database.commit()) {
             throw std::runtime_error("Failed to commit authentication");
         }
 
@@ -148,7 +163,7 @@ bool DatabaseManager::authenticateUser(const QString& username, const QString& p
     }
     catch (const std::exception& e) {
         qWarning() << "Authentication error:" << e.what();
-        m_db.rollback();
+        database.rollback();
         return false;
     }
 }
@@ -159,7 +174,7 @@ bool DatabaseManager::registerUser(const QString& username, const QString& passw
         return false;
     }
 
-    if (!m_db.transaction()) {
+    if (!database.transaction()) {
         qWarning() << "Failed to start transaction for user registration";
         return false;
     }
@@ -172,7 +187,7 @@ bool DatabaseManager::registerUser(const QString& username, const QString& passw
         QString salt = generateSalt();
         QString hashedPassword = hashPassword(password + salt);
 
-        QSqlQuery query(m_db);
+        QSqlQuery query(database);
         query.prepare(DatabaseQueries::Users::REGISTER);
         query.addBindValue(username);
         query.addBindValue(hashedPassword);
@@ -182,7 +197,7 @@ bool DatabaseManager::registerUser(const QString& username, const QString& passw
             throw std::runtime_error("Failed to register user: " + query.lastError().text().toStdString());
         }
 
-        if (!m_db.commit()) {
+        if (!database.commit()) {
             throw std::runtime_error("Failed to commit registration");
         }
 
@@ -191,20 +206,20 @@ bool DatabaseManager::registerUser(const QString& username, const QString& passw
     }
     catch (const std::exception& e) {
         qWarning() << "Registration error:" << e.what();
-        m_db.rollback();
+        database.rollback();
         return false;
     }
 }
 
 bool DatabaseManager::getUserStatus(quint32 userId, QString& status)
 {
-    if (!m_db.isOpen()) {
+    if (!database.isOpen()) {
         qWarning() << "Database is not open";
         return false;
     }
 
     try {
-        QSqlQuery query(m_db);
+        QSqlQuery query(database);
         query.prepare("SELECT status FROM users WHERE id = ?");
         query.addBindValue(userId);
 
@@ -224,13 +239,13 @@ bool DatabaseManager::getUserStatus(quint32 userId, QString& status)
 
 bool DatabaseManager::updateUserStatus(quint32 userId, const QString& status)
 {
-    if (!m_db.transaction()) {
+    if (!database.transaction()) {
         qWarning() << "Failed to start transaction for status update";
         return false;
     }
 
     try {
-        QSqlQuery query(m_db);
+        QSqlQuery query(database);
         query.prepare(DatabaseQueries::Users::UPDATE_STATUS);
         query.addBindValue(status);
         query.addBindValue(userId);
@@ -239,7 +254,7 @@ bool DatabaseManager::updateUserStatus(quint32 userId, const QString& status)
             throw std::runtime_error("Failed to update user status: " + query.lastError().text().toStdString());
         }
 
-        if (!m_db.commit()) {
+        if (!database.commit()) {
             throw std::runtime_error("Failed to commit status update");
         }
 
@@ -247,14 +262,14 @@ bool DatabaseManager::updateUserStatus(quint32 userId, const QString& status)
     }
     catch (const std::exception& e) {
         qWarning() << "Status update error:" << e.what();
-        m_db.rollback();
+        database.rollback();
         return false;
     }
 }
 
 bool DatabaseManager::storeMessage(quint32 senderId, quint32 receiverId, const QString& message)
 {
-    if (!m_db.transaction()) {
+    if (!database.transaction()) {
         qWarning() << "Failed to start transaction for storing message";
         return false;
     }
@@ -264,7 +279,7 @@ bool DatabaseManager::storeMessage(quint32 senderId, quint32 receiverId, const Q
             throw std::runtime_error("Invalid sender or receiver ID");
         }
 
-        QSqlQuery query(m_db);
+        QSqlQuery query(database);
         query.prepare(DatabaseQueries::Messages::STORE);
         query.addBindValue(senderId);
         query.addBindValue(receiverId);
@@ -274,7 +289,7 @@ bool DatabaseManager::storeMessage(quint32 senderId, quint32 receiverId, const Q
             throw std::runtime_error("Failed to store message: " + query.lastError().text().toStdString());
         }
 
-        if (!m_db.commit()) {
+        if (!database.commit()) {
             throw std::runtime_error("Failed to commit message storage");
         }
 
@@ -282,14 +297,14 @@ bool DatabaseManager::storeMessage(quint32 senderId, quint32 receiverId, const Q
     }
     catch (const std::exception& e) {
         qWarning() << "Message storage error:" << e.what();
-        m_db.rollback();
+        database.rollback();
         return false;
     }
 }
 
 bool DatabaseManager::addFriend(quint32 userId, quint32 friendId)
 {
-    if (!m_db.transaction()) {
+    if (!database.transaction()) {
         qWarning() << "Failed to start transaction for adding friend";
         return false;
     }
@@ -303,7 +318,7 @@ bool DatabaseManager::addFriend(quint32 userId, quint32 friendId)
             throw std::runtime_error("Failed to create friends list");
         }
 
-        QSqlQuery query(m_db);
+        QSqlQuery query(database);
         query.prepare(DatabaseQueries::Friends::ADD.arg(userId));
         query.addBindValue(friendId);
 
@@ -311,7 +326,7 @@ bool DatabaseManager::addFriend(quint32 userId, quint32 friendId)
             throw std::runtime_error("Failed to add friend: " + query.lastError().text().toStdString());
         }
 
-        if (!m_db.commit()) {
+        if (!database.commit()) {
             throw std::runtime_error("Failed to commit adding friend");
         }
 
@@ -319,7 +334,7 @@ bool DatabaseManager::addFriend(quint32 userId, quint32 friendId)
     }
     catch (const std::exception& e) {
         qWarning() << "Add friend error:" << e.what();
-        m_db.rollback();
+        database.rollback();
         return false;
     }
 }
@@ -328,14 +343,14 @@ QVector<QPair<quint32, QString>> DatabaseManager::getFriendsList(quint32 userId)
 {
     QVector<QPair<quint32, QString>> friendsList;
 
-    if (!m_db.transaction()) {
+    if (!database.transaction()) {
         qWarning() << "Failed to start transaction for getting friends list";
         return friendsList;
     }
 
     try {
         QString queryStr = DatabaseQueries::Friends::LIST.arg(userId);
-        QSqlQuery query(m_db);
+        QSqlQuery query(database);
 
         if (!query.exec(queryStr)) {
             throw std::runtime_error("Failed to get friends list: " + query.lastError().text().toStdString());
@@ -347,7 +362,7 @@ QVector<QPair<quint32, QString>> DatabaseManager::getFriendsList(quint32 userId)
             friendsList.append({friendId, username});
         }
 
-        if (!m_db.commit()) {
+        if (!database.commit()) {
             throw std::runtime_error("Failed to commit friends list query");
         }
 
@@ -355,7 +370,7 @@ QVector<QPair<quint32, QString>> DatabaseManager::getFriendsList(quint32 userId)
     }
     catch (const std::exception& e) {
         qWarning() << "Error getting friends list:" << e.what();
-        m_db.rollback();
+        database.rollback();
         return friendsList;
     }
 }
@@ -364,13 +379,13 @@ QVector<QPair<QString, QString>> DatabaseManager::getChatHistory(quint32 userId,
 {
     QVector<QPair<QString, QString>> messages;
 
-    if (!m_db.transaction()) {
+    if (!database.transaction()) {
         qWarning() << "Failed to start transaction for chat history";
         return messages;
     }
 
     try {
-        QSqlQuery query(m_db);
+        QSqlQuery query(database);
         query.prepare(DatabaseQueries::Messages::GET_HISTORY);
         query.addBindValue(userId);
         query.addBindValue(friendId);
@@ -388,7 +403,7 @@ QVector<QPair<QString, QString>> DatabaseManager::getChatHistory(quint32 userId,
             messages.append({sender, message});
         }
 
-        if (!m_db.commit()) {
+        if (!database.commit()) {
             throw std::runtime_error("Failed to commit chat history query");
         }
 
@@ -396,7 +411,7 @@ QVector<QPair<QString, QString>> DatabaseManager::getChatHistory(quint32 userId,
     }
     catch (const std::exception& e) {
         qWarning() << "Error getting chat history:" << e.what();
-        m_db.rollback();
+        database.rollback();
         return messages;
     }
 }
@@ -424,7 +439,7 @@ bool DatabaseManager::validatePassword(const QString& password)
 
 bool DatabaseManager::userExists(const QString& username)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database);
     query.prepare(DatabaseQueries::Users::EXISTS_BY_NAME);
     query.addBindValue(username);
 
@@ -436,7 +451,7 @@ bool DatabaseManager::userExists(const QString& username)
 
 bool DatabaseManager::userExists(quint32 userId)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database);
     query.prepare(DatabaseQueries::Users::EXISTS_BY_ID);
     query.addBindValue(userId);
 
@@ -468,20 +483,20 @@ QString DatabaseManager::hashPassword(const QString& password)
 
 bool DatabaseManager::createFriendsList(quint32 userId)
 {
-    if (!m_db.transaction()) {
+    if (!database.transaction()) {
         qWarning() << "Failed to start transaction for creating friends list";
         return false;
     }
 
     try {
         QString createTableQuery = DatabaseQueries::Create::FRIENDS_TABLE.arg(userId);
-        QSqlQuery query(m_db);
+        QSqlQuery query(database);
 
         if (!query.exec(createTableQuery)) {
             throw std::runtime_error("Failed to create friends table: " + query.lastError().text().toStdString());
         }
 
-        if (!m_db.commit()) {
+        if (!database.commit()) {
             throw std::runtime_error("Failed to commit friends table creation");
         }
 
@@ -489,8 +504,7 @@ bool DatabaseManager::createFriendsList(quint32 userId)
     }
     catch (const std::exception& e) {
         qWarning() << "Error creating friends list:" << e.what();
-        m_db.rollback();
+        database.rollback();
         return false;
     }
 }
-

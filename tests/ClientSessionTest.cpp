@@ -6,6 +6,7 @@
  */
 
 #include "ClientSessionTest.h"
+#include "TestDatabaseQueries.h"
 #include "server/Protocol.h"
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -28,33 +29,9 @@ void ClientSessionTest::initTestCase()
         new QCoreApplication(argc, argv);
     }
 
-    // Tworzenie testowego pliku konfiguracyjnego
-    QString configDir = QDir::current().filePath("config");
-    if (!QDir(configDir).exists()) {
-        QDir().mkpath(configDir);
-    }
+    // Inicjalizacja bazy danych z konfiguracją testową
+    dbManager = new DatabaseManager(TestDatabaseQueries::Config::CONFIG_FILE, this);
 
-    QString configPath = QDir::current().filePath("config/database.conf");
-    QSettings settings(configPath, QSettings::IniFormat);
-    settings.beginGroup("Database");
-    settings.setValue("hostname", "localhost");
-    settings.setValue("database", "jupiter_test");
-    settings.setValue("username", "root");
-    settings.setValue("password", "");
-    settings.setValue("port", 3306);
-    settings.endGroup();
-    settings.sync();
-
-    // Usunięcie istniejących połączeń
-    const QString connectionName = QSqlDatabase::defaultConnection;
-    if (QSqlDatabase::contains(connectionName)) {
-        QSqlDatabase::removeDatabase(connectionName);
-    }
-
-    // Utworzenie instancji DatabaseManager
-    dbManager = new DatabaseManager(this);
-
-    // Inicjalizacja bazy danych
     if (!dbManager->init()) {
         qDebug() << "Failed to initialize DatabaseManager";
         QFAIL("DatabaseManager initialization failed");
@@ -64,25 +41,22 @@ void ClientSessionTest::initTestCase()
     QSqlDatabase db = dbManager->getDatabase();
     QSqlQuery query(db);
 
-    // Wyłączenie sprawdzania kluczy obcych
-    query.exec("SET FOREIGN_KEY_CHECKS = 0");
+    query.exec(TestDatabaseQueries::Setup::DISABLE_FOREIGN_KEYS);
 
-    // Usuwanie istniejących tabel w odpowiedniej kolejności
-    if (!query.exec("DROP TABLE IF EXISTS messages")) {
+    if (!query.exec(TestDatabaseQueries::Setup::DROP_MESSAGES_TABLE)) {
         qDebug() << "Failed to drop messages table:" << query.lastError().text();
     }
-    if (!query.exec("DROP TABLE IF EXISTS user_sessions")) {
+    if (!query.exec(TestDatabaseQueries::Setup::DROP_USER_SESSIONS_TABLE)) {
         qDebug() << "Failed to drop user_sessions table:" << query.lastError().text();
     }
-    if (!query.exec("DROP TABLE IF EXISTS users")) {
+    if (!query.exec(TestDatabaseQueries::Setup::DROP_USERS_TABLE)) {
         qDebug() << "Failed to drop users table:" << query.lastError().text();
     }
 
-    // Włączenie z powrotem sprawdzania kluczy obcych
-    query.exec("SET FOREIGN_KEY_CHECKS = 1");
+    query.exec(TestDatabaseQueries::Setup::ENABLE_FOREIGN_KEYS);
 
-    // Inicjalizacja tabel na nowo
-    if (!dbManager->createTablesIfNotExist()) {
+    // Używamy nowej metody do reinicjalizacji tabel
+    if (!dbManager->reinitializeTables()) {
         qDebug() << "Failed to create tables";
         QFAIL("Failed to create database tables");
     }
@@ -102,24 +76,17 @@ void ClientSessionTest::cleanupTestCase()
         // Czyszczenie bazy
         QSqlQuery query(dbManager->getDatabase());
 
-        // Wyłączenie sprawdzania kluczy obcych
-        query.exec("SET FOREIGN_KEY_CHECKS = 0");
+        query.exec(TestDatabaseQueries::Setup::DISABLE_FOREIGN_KEYS);
 
-        // Usuwanie tabel w odpowiedniej kolejności
-        query.exec("DROP TABLE IF EXISTS messages");
-        query.exec("DROP TABLE IF EXISTS user_sessions");
-        query.exec("DROP TABLE IF EXISTS users");
+        query.exec(TestDatabaseQueries::Setup::DROP_MESSAGES_TABLE);
+        query.exec(TestDatabaseQueries::Setup::DROP_USER_SESSIONS_TABLE);
+        query.exec(TestDatabaseQueries::Setup::DROP_USERS_TABLE);
 
-        // Włączenie sprawdzania kluczy obcych
-        query.exec("SET FOREIGN_KEY_CHECKS = 1");
+        query.exec(TestDatabaseQueries::Setup::ENABLE_FOREIGN_KEYS);
 
         delete dbManager;
         dbManager = nullptr;
     }
-
-    // Usuń plik konfiguracyjny
-    QFile::remove(QDir::current().filePath("config/database.conf"));
-    QDir().rmdir(QDir::current().filePath("config"));
 
     QSqlDatabase::removeDatabase(QSqlDatabase::defaultConnection);
     qDebug() << "Test database cleaned up";

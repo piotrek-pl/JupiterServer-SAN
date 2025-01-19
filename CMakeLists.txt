@@ -54,6 +54,35 @@ set(PROJECT_HEADERS
     src/network/NotificationManager.h
 )
 
+# Konfiguracja plików zasobów
+set(CONFIG_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/config/database.conf
+    ${CMAKE_CURRENT_SOURCE_DIR}/config/databaseTest.conf
+    ${CMAKE_CURRENT_SOURCE_DIR}/scripts/initDatabase.sql
+)
+
+# Sprawdzanie obecności plików konfiguracyjnych
+foreach(CONFIG_FILE ${CONFIG_FILES})
+    if(NOT EXISTS ${CONFIG_FILE})
+        message(FATAL_ERROR "Nie znaleziono pliku: ${CONFIG_FILE}")
+    endif()
+endforeach()
+
+# Kopiowanie plików konfiguracyjnych do katalogu build
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/config/database.conf
+    ${CMAKE_BINARY_DIR}/config/database.conf
+    COPYONLY
+)
+
+# Tworzenie katalogu scripts i kopiowanie pliku SQL
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/scripts)
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/scripts/initDatabase.sql
+    ${CMAKE_BINARY_DIR}/scripts/initDatabase.sql
+    COPYONLY
+)
+
 # Tworzymy główny executable
 add_executable(${PROJECT_NAME}
     ${PROJECT_SOURCES}
@@ -83,6 +112,7 @@ if(BUILD_TESTS)
         tests/ProtocolTest.cpp
         tests/ClientSessionTest.cpp
         tests/TestSocket.cpp
+        tests/TestDatabaseQueries.cpp
         # Dodajemy potrzebne pliki źródłowe z projektu
         src/server/Protocol.cpp
         src/server/ClientSession.cpp
@@ -93,6 +123,21 @@ if(BUILD_TESTS)
         tests/ProtocolTest.h
         tests/ClientSessionTest.h
         tests/TestSocket.h
+        tests/TestDatabaseQueries.h
+    )
+
+    # Kopiowanie plików konfiguracyjnych dla testów
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/config/databaseTest.conf
+        ${CMAKE_BINARY_DIR}/config/databaseTest.conf
+        COPYONLY
+    )
+
+    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/tests/scripts)
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/scripts/initDatabase.sql
+        ${CMAKE_BINARY_DIR}/tests/scripts/initDatabase.sql
+        COPYONLY
     )
 
     # Tworzymy executable dla testów

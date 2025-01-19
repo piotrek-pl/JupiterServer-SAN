@@ -3,7 +3,6 @@ D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/
   C:/Qt/6.7.2/mingw_64/include/QtCore/QAbstractItemModel \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QByteArray \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QDeadlineTimer \
-  C:/Qt/6.7.2/mingw_64/include/QtCore/QDebug \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QFlags \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QHash \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QIODevice \
@@ -308,10 +307,8 @@ D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/
   C:/Qt/6.7.2/mingw_64/include/QtNetwork/qtnetworkexports.h \
   C:/Qt/6.7.2/mingw_64/include/QtNetwork/qtnetworkglobal.h \
   C:/Qt/6.7.2/mingw_64/include/QtSql/QSqlDatabase \
-  C:/Qt/6.7.2/mingw_64/include/QtSql/QSqlError \
   C:/Qt/6.7.2/mingw_64/include/QtSql/QSqlQuery \
   C:/Qt/6.7.2/mingw_64/include/QtSql/qsqldatabase.h \
-  C:/Qt/6.7.2/mingw_64/include/QtSql/qsqlerror.h \
   C:/Qt/6.7.2/mingw_64/include/QtSql/qsqlquery.h \
   C:/Qt/6.7.2/mingw_64/include/QtSql/qtsql-config.h \
   C:/Qt/6.7.2/mingw_64/include/QtSql/qtsqlexports.h \
@@ -658,6 +655,5 @@ D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/
   C:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/wchar.h \
   C:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/wctype.h \
   D:/programowanie/Qt/SAN/JupiterServer/src/database/DatabaseManager.h \
-  D:/programowanie/Qt/SAN/JupiterServer/src/database/DatabaseQueries.h \
   D:/programowanie/Qt/SAN/JupiterServer/src/server/ClientSession.h \
   D:/programowanie/Qt/SAN/JupiterServer/tests/TestSocket.h

@@ -1,9 +1,7 @@
 D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/jupiter_server_tests_autogen/M7KQ2GL7XF/moc_DatabaseManager.cpp: D:/programowanie/Qt/SAN/JupiterServer/src/database/DatabaseManager.h \
   D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/jupiter_server_tests_autogen/moc_predefs.h \
-  C:/Qt/6.7.2/mingw_64/include/QtCore/QDebug \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QObject \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QPair \
-  C:/Qt/6.7.2/mingw_64/include/QtCore/QString \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QVector \
   C:/Qt/6.7.2/mingw_64/include/QtCore/q20functional.h \
   C:/Qt/6.7.2/mingw_64/include/QtCore/q20memory.h \
@@ -118,10 +116,8 @@ D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/
   C:/Qt/6.7.2/mingw_64/include/QtCore/qxptype_traits.h \
   C:/Qt/6.7.2/mingw_64/include/QtCore/qyieldcpu.h \
   C:/Qt/6.7.2/mingw_64/include/QtSql/QSqlDatabase \
-  C:/Qt/6.7.2/mingw_64/include/QtSql/QSqlError \
   C:/Qt/6.7.2/mingw_64/include/QtSql/QSqlQuery \
   C:/Qt/6.7.2/mingw_64/include/QtSql/qsqldatabase.h \
-  C:/Qt/6.7.2/mingw_64/include/QtSql/qsqlerror.h \
   C:/Qt/6.7.2/mingw_64/include/QtSql/qsqlquery.h \
   C:/Qt/6.7.2/mingw_64/include/QtSql/qtsql-config.h \
   C:/Qt/6.7.2/mingw_64/include/QtSql/qtsqlexports.h \
@@ -324,5 +320,4 @@ D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/
   C:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/sys/types.h \
   C:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/time.h \
   C:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/vadefs.h \
-  C:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/wchar.h \
-  D:/programowanie/Qt/SAN/JupiterServer/src/database/DatabaseQueries.h
+  C:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/wchar.h

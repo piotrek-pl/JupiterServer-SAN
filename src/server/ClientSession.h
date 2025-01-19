@@ -1,3 +1,10 @@
+/**
+ * @file ClientSession.h
+ * @brief Declaration of the ClientSession class
+ * @author piotrek-pl
+ * @date 2025-01-19
+ */
+
 #ifndef CLIENTSESSION_H
 #define CLIENTSESSION_H
 
@@ -5,6 +12,7 @@
 #include <QTcpSocket>
 #include <QTimer>
 #include <QJsonObject>
+#include <QHash>
 
 class DatabaseManager;
 
@@ -18,28 +26,43 @@ public:
 private slots:
     void handleReadyRead();
     void handleError(QAbstractSocket::SocketError socketError);
-    // Nowe sloty do obsługi cyklicznych zapytań
     void sendFriendsStatusUpdate();
     void sendPendingMessages();
+    void checkConnectionStatus();
 
 private:
     void processMessage(const QByteArray& message);
     void sendResponse(const QByteArray& response);
+
+    // Handler methods
+    void handleLogin(const QJsonObject& json);
+    void handleRegister(const QJsonObject& json);
+    void handleLogout();
     void handleStatusRequest();
     void handleFriendsListRequest();
     void handleMessageRequest();
+    void handlePing(const QJsonObject& message);
+    void handleMessageAck(const QJsonObject& message);
+    void handleSendMessage(const QJsonObject& json);
 
-    // Metody pomocnicze do przygotowania odpowiedzi
+    // Helper methods
     QJsonObject prepareFriendsListResponse();
     QJsonObject prepareStatusResponse();
     QJsonObject prepareMessagesResponse();
 
-    QTcpSocket* m_socket;
-    DatabaseManager* m_dbManager;
-    quint32 m_userId;
-    bool m_isAuthenticated;
-    QTimer m_statusUpdateTimer;    // Timer do aktualizacji statusu
-    QTimer m_messagesCheckTimer;   // Timer do sprawdzania nowych wiadomości
+    static constexpr int MAX_MISSED_PINGS = 3;
+
+    // Member variables
+    QTcpSocket* socket;
+    DatabaseManager* dbManager;
+    quint32 userId;
+    bool isAuthenticated;
+    QTimer statusUpdateTimer;
+    QTimer messagesCheckTimer;
+    QTimer pingTimer;
+    qint64 lastPingTime;
+    int missedPings;
+    QHash<QString, QJsonObject> unconfirmedMessages;
 };
 
 #endif // CLIENTSESSION_H

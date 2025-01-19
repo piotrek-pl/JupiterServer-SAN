@@ -22,14 +22,19 @@ find_package(Qt6 6.7.2 COMPONENTS
     Network
     Sql
     WebSockets
+    Test    # Dodajemy komponent Test
     REQUIRED
 )
+
+# Opcja włączenia testów (domyślnie włączone)
+option(BUILD_TESTS "Build tests" ON)
 
 # Definiujemy pliki źródłowe
 set(PROJECT_SOURCES
     src/main.cpp
     src/server/Server.cpp
     src/server/ClientSession.cpp
+    src/server/Protocol.cpp
     src/database/DatabaseManager.cpp
     src/database/DatabaseQueries.cpp
     src/models/User.cpp
@@ -41,6 +46,7 @@ set(PROJECT_SOURCES
 set(PROJECT_HEADERS
     src/server/Server.h
     src/server/ClientSession.h
+    src/server/Protocol.h
     src/database/DatabaseManager.h
     src/database/DatabaseQueries.h
     src/models/User.h
@@ -48,17 +54,15 @@ set(PROJECT_HEADERS
     src/network/NotificationManager.h
 )
 
-# Tworzymy executable
+# Tworzymy główny executable
 add_executable(${PROJECT_NAME}
     ${PROJECT_SOURCES}
     ${PROJECT_HEADERS}
-    ${PROJECT_RESOURCES}
 )
 
 # Dodajemy ścieżki include
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 # Linkujemy z Qt
@@ -69,67 +73,50 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::WebSockets
 )
 
-# Ustawiamy opcje kompilatora
-if(MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        /W4
-        /WX
-    )
-else()
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        -Wall
-        -Wextra
-        -Wpedantic
-        -Werror
-    )
-endif()
-
-# Definiujemy konfigurację Debug/Release
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG")
-
-# Kopiujemy pliki konfiguracyjne
-set(CONFIG_FILES
-    config/database.conf
-    scripts/initDatabase.sql
-)
-
-foreach(CONFIG_FILE ${CONFIG_FILES})
-    configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/${CONFIG_FILE}
-        ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG_FILE}
-        COPYONLY
-    )
-endforeach()
-
-# Instalacja
-include(GNUInstallDirs)
-
-install(TARGETS ${PROJECT_NAME}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
-
-install(FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/config/databaseConfig.conf
-    DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/${PROJECT_NAME}
-)
-
-install(FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/scripts/initDatabase.sql
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/sql
-)
-
-# Dodajemy opcję włączenia testów (jeśli będą potrzebne w przyszłości)
-option(BUILD_TESTS "Build tests" OFF)
+# Sekcja testów
 if(BUILD_TESTS)
     enable_testing()
-    add_subdirectory(tests)
-endif()
 
-# Wyświetl podsumowanie konfiguracji
-message(STATUS "")
-message(STATUS "Generated ${PROJECT_NAME} with config:")
-message(STATUS "  Qt version: ${Qt6_VERSION}")
-message(STATUS "  Build type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
-message(STATUS "")
+    # Definiujemy pliki źródłowe i nagłówkowe testów
+    set(TEST_SOURCES
+        tests/main_test.cpp
+        tests/ProtocolTest.cpp
+        tests/ClientSessionTest.cpp
+        tests/TestSocket.cpp
+        # Dodajemy potrzebne pliki źródłowe z projektu
+        src/server/Protocol.cpp
+        src/server/ClientSession.cpp
+        src/database/DatabaseManager.cpp
+    )
+
+    set(TEST_HEADERS
+        tests/ProtocolTest.h
+        tests/ClientSessionTest.h
+        tests/TestSocket.h
+    )
+
+    # Tworzymy executable dla testów
+    add_executable(jupiter_server_tests
+        ${TEST_SOURCES}
+        ${TEST_HEADERS}  # Dodajemy pliki nagłówkowe
+    )
+
+    # Linkujemy testy z odpowiednimi bibliotekami
+    target_link_libraries(jupiter_server_tests PRIVATE
+        Qt6::Core
+        Qt6::Network
+        Qt6::Sql
+        Qt6::Test
+        Qt6::WebSockets
+    )
+
+    # Dodajemy ścieżki include dla testów
+    target_include_directories(jupiter_server_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests
+        ${CMAKE_CURRENT_BINARY_DIR}  # Dla plików generowanych przez MOC
+    )
+
+    # Dodajemy test do CTest
+    add_test(NAME jupiter_server_tests COMMAND jupiter_server_tests)
+endif()

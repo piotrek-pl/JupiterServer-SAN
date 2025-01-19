@@ -15,7 +15,7 @@
 ########################
 
 //Build tests
-BUILD_TESTS:BOOL=OFF
+BUILD_TESTS:BOOL=ON
 
 //Path to a program.
 CMAKE_ADDR2LINE:FILEPATH=C:/Qt/Tools/mingw1120_64/bin/addr2line.exe
@@ -319,9 +319,6 @@ QT_CREATOR_SKIP_PACKAGE_MANAGER_SETUP:BOOL=OFF
 //Qt Creator source groups extensions
 QT_CREATOR_SOURCE_GROUPS:BOOL=ON
 
-//The directory containing a CMake configuration file for QT.
-QT_DIR:PATH=C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6
-
 //No help, variable specified on the command line.
 QT_QMAKE_EXECUTABLE:FILEPATH=C:/Qt/6.7.2/mingw_64/bin/qmake.exe
 
@@ -339,6 +336,9 @@ Qt6Network_DIR:PATH=C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6Network
 
 //The directory containing a CMake configuration file for Qt6Sql.
 Qt6Sql_DIR:PATH=C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6Sql
+
+//The directory containing a CMake configuration file for Qt6Test.
+Qt6Test_DIR:PATH=C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6Test
 
 //The directory containing a CMake configuration file for Qt6WebSockets.
 Qt6WebSockets_DIR:PATH=C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6WebSockets
@@ -577,6 +577,8 @@ QT_FEATURE_avx512vbmi2:INTERNAL=ON
 QT_FEATURE_avx512vl:INTERNAL=ON
 //Qt feature: backtrace (from target Qt6::Core)
 QT_FEATURE_backtrace:INTERNAL=OFF
+//Qt feature: batch_test_support (from target Qt6::Test)
+QT_FEATURE_batch_test_support:INTERNAL=OFF
 //Qt feature: brotli (from target Qt6::Network)
 QT_FEATURE_brotli:INTERNAL=OFF
 //Qt feature: cborstreamreader (from target Qt6::Core)
@@ -693,6 +695,8 @@ QT_FEATURE_ipv6ifname:INTERNAL=OFF
 QT_FEATURE_islamiccivilcalendar:INTERNAL=ON
 //Qt feature: itemmodel (from target Qt6::Core)
 QT_FEATURE_itemmodel:INTERNAL=ON
+//Qt feature: itemmodeltester (from target Qt6::Test)
+QT_FEATURE_itemmodeltester:INTERNAL=ON
 //Qt feature: jalalicalendar (from target Qt6::Core)
 QT_FEATURE_jalalicalendar:INTERNAL=ON
 //Qt feature: journald (from target Qt6::Core)
@@ -891,6 +895,8 @@ QT_FEATURE_sysv_shm:INTERNAL=OFF
 QT_FEATURE_temporaryfile:INTERNAL=ON
 //Qt feature: testlib (from target Qt6::Core)
 QT_FEATURE_testlib:INTERNAL=ON
+//Qt feature: testlib_selfcover (from target Qt6::Test)
+QT_FEATURE_testlib_selfcover:INTERNAL=OFF
 //Qt feature: textdate (from target Qt6::Core)
 QT_FEATURE_textdate:INTERNAL=ON
 //Qt feature: thread (from target Qt6::Core)
@@ -915,6 +921,8 @@ QT_FEATURE_use_lld_linker:INTERNAL=OFF
 QT_FEATURE_use_mold_linker:INTERNAL=OFF
 //Qt feature: vaes (from target Qt6::Core)
 QT_FEATURE_vaes:INTERNAL=ON
+//Qt feature: valgrind (from target Qt6::Test)
+QT_FEATURE_valgrind:INTERNAL=OFF
 //Qt feature: wasm_exceptions (from target Qt6::Core)
 QT_FEATURE_wasm_exceptions:INTERNAL=OFF
 //Qt feature: wasm_simd128 (from target Qt6::Core)

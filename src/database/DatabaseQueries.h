@@ -96,6 +96,7 @@ const QString GET_USER_INFO =
 const QString UPDATE_LAST_LOGIN =
     "UPDATE users SET last_login = CURRENT_TIMESTAMP "
     "WHERE id = ?";
+
 }
 
 // Zapytania związane z wiadomościami

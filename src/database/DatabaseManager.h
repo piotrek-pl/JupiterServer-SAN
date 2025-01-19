@@ -45,11 +45,11 @@ public:
     // Metody pomocnicze
     bool userExists(const QString& username);
     bool userExists(quint32 userId);
+    bool createTablesIfNotExist();
     QString getUserName(quint32 userId);
 
 private:
     // Metody pomocnicze do inicjalizacji bazy danych
-    bool createTablesIfNotExist();
     bool createUsersTable();
     bool createFriendsTable(quint32 userId);
     bool createMessagesTable();

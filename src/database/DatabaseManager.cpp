@@ -196,6 +196,32 @@ bool DatabaseManager::registerUser(const QString& username, const QString& passw
     }
 }
 
+bool DatabaseManager::getUserStatus(quint32 userId, QString& status)
+{
+    if (!m_db.isOpen()) {
+        qWarning() << "Database is not open";
+        return false;
+    }
+
+    try {
+        QSqlQuery query(m_db);
+        query.prepare("SELECT status FROM users WHERE id = ?");
+        query.addBindValue(userId);
+
+        if (!query.exec() || !query.next()) {
+            qWarning() << "Failed to get user status:" << query.lastError().text();
+            return false;
+        }
+
+        status = query.value(0).toString();
+        return true;
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error getting user status:" << e.what();
+        return false;
+    }
+}
+
 bool DatabaseManager::updateUserStatus(quint32 userId, const QString& status)
 {
     if (!m_db.transaction()) {
@@ -467,3 +493,4 @@ bool DatabaseManager::createFriendsList(quint32 userId)
         return false;
     }
 }
+

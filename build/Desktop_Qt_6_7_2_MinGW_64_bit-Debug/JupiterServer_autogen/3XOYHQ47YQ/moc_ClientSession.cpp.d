@@ -1,5 +1,6 @@
 D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/JupiterServer_autogen/3XOYHQ47YQ/moc_ClientSession.cpp: D:/programowanie/Qt/SAN/JupiterServer/src/server/ClientSession.h \
   D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/JupiterServer_autogen/moc_predefs.h \
+  C:/Qt/6.7.2/mingw_64/include/QtCore/QHash \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QJsonObject \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QObject \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QTimer \

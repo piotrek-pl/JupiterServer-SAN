@@ -39,19 +39,19 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 49,
+				"line" : 53,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 104,
+				"line" : 108,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 62,
+				"line" : 66,
 				"parent" : 0
 			},
 			{
@@ -119,13 +119,13 @@
 			{
 				"command" : 6,
 				"file" : 0,
-				"line" : 75,
+				"line" : 79,
 				"parent" : 0
 			},
 			{
 				"command" : 7,
 				"file" : 0,
-				"line" : 56,
+				"line" : 60,
 				"parent" : 0
 			}
 		]
@@ -257,18 +257,20 @@
 				4,
 				5,
 				6,
-				7
+				7,
+				8,
+				9
 			]
 		}
 	],
 	"dependencies" : 
 	[
 		{
-			"backtrace" : 0,
-			"id" : "JupiterServer_autogen::@6890427a1f51a3e7e1df"
+			"id" : "JupiterServer_autogen_timestamp_deps::@6890427a1f51a3e7e1df"
 		},
 		{
-			"id" : "JupiterServer_autogen_timestamp_deps::@6890427a1f51a3e7e1df"
+			"backtrace" : 0,
+			"id" : "JupiterServer_autogen::@6890427a1f51a3e7e1df"
 		}
 	],
 	"id" : "JupiterServer::@6890427a1f51a3e7e1df",
@@ -355,33 +357,37 @@
 				4,
 				5,
 				6,
-				7
+				7,
+				8,
+				9
 			]
 		},
 		{
 			"name" : "Header Files",
 			"sourceIndexes" : 
 			[
-				8,
-				9,
 				10,
 				11,
 				12,
-				13
+				13,
+				14,
+				15,
+				16,
+				17
 			]
 		},
 		{
 			"name" : "",
 			"sourceIndexes" : 
 			[
-				14
+				18
 			]
 		},
 		{
 			"name" : "CMake Rules",
 			"sourceIndexes" : 
 			[
-				15
+				19
 			]
 		}
 	],
@@ -410,6 +416,18 @@
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
 			"path" : "src/server/ClientSession.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/server/ConnectionManager.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/server/NotificationService.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
@@ -444,6 +462,16 @@
 		{
 			"backtrace" : 1,
 			"path" : "src/server/ClientSession.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/server/ConnectionManager.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/server/NotificationService.h",
 			"sourceGroupIndex" : 1
 		},
 		{

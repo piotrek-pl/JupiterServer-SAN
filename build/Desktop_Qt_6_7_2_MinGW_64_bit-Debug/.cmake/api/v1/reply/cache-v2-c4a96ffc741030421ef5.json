@@ -4146,6 +4146,18 @@
 			"value" : "C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6Sql"
 		},
 		{
+			"name" : "Qt6WebSockets_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for Qt6WebSockets."
+				}
+			],
+			"type" : "PATH",
+			"value" : "C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6WebSockets"
+		},
+		{
 			"name" : "Qt6ZlibPrivate_DIR",
 			"properties" : 
 			[

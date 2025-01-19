@@ -1,11 +1,17 @@
 JupiterServer_autogen/timestamp: \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QDebug \
+	C:/Qt/6.7.2/mingw_64/include/QtCore/QFlags \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QHash \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QJsonObject \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QObject \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QPair \
+	C:/Qt/6.7.2/mingw_64/include/QtCore/QScopedPointer \
+	C:/Qt/6.7.2/mingw_64/include/QtCore/QSharedDataPointer \
+	C:/Qt/6.7.2/mingw_64/include/QtCore/QSharedPointer \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QString \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QTimer \
+	C:/Qt/6.7.2/mingw_64/include/QtCore/QUrl \
+	C:/Qt/6.7.2/mingw_64/include/QtCore/QVariant \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QVector \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/q20functional.h \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/q20memory.h \
@@ -40,6 +46,7 @@ JupiterServer_autogen/timestamp: \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/qcontainerinfo.h \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/qcontainertools_impl.h \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/qcontiguouscache.h \
+	C:/Qt/6.7.2/mingw_64/include/QtCore/qcryptographichash.h \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/qdarwinhelpers.h \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/qdatastream.h \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/qdatetime.h \
@@ -133,10 +140,22 @@ JupiterServer_autogen/timestamp: \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/qversiontagging.h \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/qxptype_traits.h \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/qyieldcpu.h \
+	C:/Qt/6.7.2/mingw_64/include/QtNetwork/QAbstractSocket \
+	C:/Qt/6.7.2/mingw_64/include/QtNetwork/QNetworkProxy \
+	C:/Qt/6.7.2/mingw_64/include/QtNetwork/QNetworkRequest \
+	C:/Qt/6.7.2/mingw_64/include/QtNetwork/QSslConfiguration \
+	C:/Qt/6.7.2/mingw_64/include/QtNetwork/QSslError \
 	C:/Qt/6.7.2/mingw_64/include/QtNetwork/QTcpServer \
 	C:/Qt/6.7.2/mingw_64/include/QtNetwork/QTcpSocket \
 	C:/Qt/6.7.2/mingw_64/include/QtNetwork/qabstractsocket.h \
 	C:/Qt/6.7.2/mingw_64/include/QtNetwork/qhostaddress.h \
+	C:/Qt/6.7.2/mingw_64/include/QtNetwork/qnetworkproxy.h \
+	C:/Qt/6.7.2/mingw_64/include/QtNetwork/qnetworkrequest.h \
+	C:/Qt/6.7.2/mingw_64/include/QtNetwork/qssl.h \
+	C:/Qt/6.7.2/mingw_64/include/QtNetwork/qsslcertificate.h \
+	C:/Qt/6.7.2/mingw_64/include/QtNetwork/qsslconfiguration.h \
+	C:/Qt/6.7.2/mingw_64/include/QtNetwork/qsslerror.h \
+	C:/Qt/6.7.2/mingw_64/include/QtNetwork/qsslsocket.h \
 	C:/Qt/6.7.2/mingw_64/include/QtNetwork/qtcpserver.h \
 	C:/Qt/6.7.2/mingw_64/include/QtNetwork/qtcpsocket.h \
 	C:/Qt/6.7.2/mingw_64/include/QtNetwork/qtnetwork-config.h \
@@ -151,6 +170,11 @@ JupiterServer_autogen/timestamp: \
 	C:/Qt/6.7.2/mingw_64/include/QtSql/qtsql-config.h \
 	C:/Qt/6.7.2/mingw_64/include/QtSql/qtsqlexports.h \
 	C:/Qt/6.7.2/mingw_64/include/QtSql/qtsqlglobal.h \
+	C:/Qt/6.7.2/mingw_64/include/QtWebSockets/QWebSocket \
+	C:/Qt/6.7.2/mingw_64/include/QtWebSockets/qtwebsocketsexports.h \
+	C:/Qt/6.7.2/mingw_64/include/QtWebSockets/qwebsocket.h \
+	C:/Qt/6.7.2/mingw_64/include/QtWebSockets/qwebsocketprotocol.h \
+	C:/Qt/6.7.2/mingw_64/include/QtWebSockets/qwebsockets_global.h \
 	C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6/FindWrapAtomic.cmake \
 	C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6/Qt6Config.cmake \
 	C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6/Qt6ConfigExtras.cmake \
@@ -254,6 +278,14 @@ JupiterServer_autogen/timestamp: \
 	C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6Sql/Qt6SqlTargets-relwithdebinfo.cmake \
 	C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6Sql/Qt6SqlTargets.cmake \
 	C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6Sql/Qt6SqlVersionlessTargets.cmake \
+	C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsAdditionalTargetInfo.cmake \
+	C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsConfig.cmake \
+	C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsConfigVersion.cmake \
+	C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsConfigVersionImpl.cmake \
+	C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsDependencies.cmake \
+	C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsTargets-relwithdebinfo.cmake \
+	C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsTargets.cmake \
+	C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsVersionlessTargets.cmake \
 	C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6ZlibPrivate/Qt6ZlibPrivateAdditionalTargetInfo.cmake \
 	C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6ZlibPrivate/Qt6ZlibPrivateConfig.cmake \
 	C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6ZlibPrivate/Qt6ZlibPrivateConfigVersion.cmake \
@@ -507,6 +539,8 @@ JupiterServer_autogen/timestamp: \
 	D:/programowanie/Qt/SAN/JupiterServer/src/models/Message.h \
 	D:/programowanie/Qt/SAN/JupiterServer/src/models/User.cpp \
 	D:/programowanie/Qt/SAN/JupiterServer/src/models/User.h \
+	D:/programowanie/Qt/SAN/JupiterServer/src/network/NotificationManager.cpp \
+	D:/programowanie/Qt/SAN/JupiterServer/src/network/NotificationManager.h \
 	D:/programowanie/Qt/SAN/JupiterServer/src/server/ClientSession.cpp \
 	D:/programowanie/Qt/SAN/JupiterServer/src/server/ClientSession.h \
 	D:/programowanie/Qt/SAN/JupiterServer/src/server/Server.cpp \

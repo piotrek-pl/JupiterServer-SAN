@@ -21,6 +21,7 @@ find_package(Qt6 6.7.2 COMPONENTS
     Core
     Network
     Sql
+    WebSockets
     REQUIRED
 )
 
@@ -33,6 +34,7 @@ set(PROJECT_SOURCES
     src/database/DatabaseQueries.cpp
     src/models/User.cpp
     src/models/Message.cpp
+    src/network/NotificationManager.cpp
 )
 
 # Definiujemy pliki nagłówkowe
@@ -43,6 +45,7 @@ set(PROJECT_HEADERS
     src/database/DatabaseQueries.h
     src/models/User.h
     src/models/Message.h
+    src/network/NotificationManager.h
 )
 
 # Tworzymy executable
@@ -63,6 +66,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Core
     Qt6::Network
     Qt6::Sql
+    Qt6::WebSockets
 )
 
 # Ustawiamy opcje kompilatora

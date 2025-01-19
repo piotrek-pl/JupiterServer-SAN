@@ -7,7 +7,7 @@
 				{
 					"build" : ".",
 					"hasInstallRule" : true,
-					"jsonFile" : "directory-.-Debug-81a2c48eedab4081f105.json",
+					"jsonFile" : "directory-.-Debug-9824006b5e84a18cf611.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.16"
@@ -44,7 +44,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "JupiterServer::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-JupiterServer-Debug-0d65aecac05b5a634036.json",
+					"jsonFile" : "target-JupiterServer-Debug-83f11a1a87f301fee651.json",
 					"name" : "JupiterServer",
 					"projectIndex" : 0
 				},

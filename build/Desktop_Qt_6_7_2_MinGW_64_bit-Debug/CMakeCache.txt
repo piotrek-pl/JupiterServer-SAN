@@ -340,6 +340,9 @@ Qt6Network_DIR:PATH=C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6Network
 //The directory containing a CMake configuration file for Qt6Sql.
 Qt6Sql_DIR:PATH=C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6Sql
 
+//The directory containing a CMake configuration file for Qt6WebSockets.
+Qt6WebSockets_DIR:PATH=C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6WebSockets
+
 //The directory containing a CMake configuration file for Qt6ZlibPrivate.
 Qt6ZlibPrivate_DIR:PATH=C:/Qt/6.7.2/mingw_64/lib/cmake/Qt6ZlibPrivate
 

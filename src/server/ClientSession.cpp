@@ -150,13 +150,7 @@ void ClientSession::processMessage(const QByteArray& message)
 
     qDebug() << "SERVER: Received message type:" << type;
 
-    // Zawsze akceptuj PING/PONG
-    if (type == Protocol::MessageType::PING) {
-        qDebug() << "SERVER: Processing PING message";
-        handlePing(json);
-        return;
-    }
-    else if (type == Protocol::MessageType::PONG) {
+    if (type == Protocol::MessageType::PONG) {
         lastPingTime = QDateTime::currentMSecsSinceEpoch();
         missedPings = 0;
         return;
@@ -291,17 +285,14 @@ void ClientSession::handleLogout()
 
 void ClientSession::handlePing(const QJsonObject& message)
 {
-    qDebug() << "SERVER: Handling PING message at"
+    qDebug() << "SERVER: Received PING from client at"
              << QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss.zzz");
 
+    // Tylko aktualizujemy czas ostatniego pinga
     lastPingTime = QDateTime::currentMSecsSinceEpoch();
     missedPings = 0;
 
-    qint64 timestamp = message["timestamp"].toInteger();
-    QJsonObject pong = Protocol::MessageStructure::createPong(timestamp);
-
-    qDebug() << "SERVER: Sending PONG response with timestamp:" << timestamp;
-    sendResponse(QJsonDocument(pong).toJson());
+    // NIE wysyłamy odpowiedzi PONG
 }
 
 void ClientSession::handleMessageAck(const QJsonObject& message)

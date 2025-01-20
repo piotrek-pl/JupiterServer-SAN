@@ -373,29 +373,38 @@ QVector<QPair<quint32, QString>> DatabaseManager::getFriendsList(quint32 userId)
 {
     QVector<QPair<quint32, QString>> friendsList;
 
+    qDebug() << "Getting friends list for user:" << userId;  // Debug log
+
     if (!database.transaction()) {
         qWarning() << "Failed to start transaction for getting friends list";
         return friendsList;
     }
 
     try {
-        QString queryStr = DatabaseQueries::Friends::LIST.arg(userId);
+        QString queryStr = DatabaseQueries::Friends::LIST.arg(QString::number(userId));
         QSqlQuery query(database);
 
+        qDebug() << "Executing query:" << queryStr;  // Debug log
+
         if (!query.exec(queryStr)) {
+            qWarning() << "Query error:" << query.lastError().text();  // Debug log
             throw std::runtime_error("Failed to get friends list: " + query.lastError().text().toStdString());
         }
 
         while (query.next()) {
             quint32 friendId = query.value(0).toUInt();
             QString username = query.value(1).toString();
+            QString status = query.value(2).toString();  // Debug - dodaj status
+            qDebug() << "Found friend:" << friendId << username << status;  // Debug log
             friendsList.append({friendId, username});
         }
 
         if (!database.commit()) {
+            qWarning() << "Commit error:" << database.lastError().text();  // Debug log
             throw std::runtime_error("Failed to commit friends list query");
         }
 
+        qDebug() << "Successfully found" << friendsList.size() << "friends";  // Debug log
         return friendsList;
     }
     catch (const std::exception& e) {

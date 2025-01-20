@@ -150,7 +150,13 @@ void ClientSession::processMessage(const QByteArray& message)
 
     qDebug() << "SERVER: Received message type:" << type;
 
-    if (type == Protocol::MessageType::PONG) {
+    // Zawsze akceptuj PING/PONG
+    if (type == Protocol::MessageType::PING) {
+        qDebug() << "SERVER: Processing PING message";
+        handlePing(json);
+        return;
+    }
+    else if (type == Protocol::MessageType::PONG) {
         lastPingTime = QDateTime::currentMSecsSinceEpoch();
         missedPings = 0;
         return;
@@ -176,6 +182,31 @@ void ClientSession::processMessage(const QByteArray& message)
     }
     else if (type == Protocol::MessageType::GET_STATUS) {
         handleStatusRequest();
+    }
+    else if (type == Protocol::MessageType::STATUS_UPDATE) {
+        QString newStatus = json["status"].toString();
+        if (!newStatus.isEmpty() && userId > 0) {
+            if (dbManager->updateUserStatus(userId, newStatus)) {
+                // Przygotuj i wyślij odpowiedź potwierdzającą zmianę statusu
+                QJsonObject response{
+                    {"type", Protocol::MessageType::STATUS_UPDATE},
+                    {"status", newStatus},
+                    {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+                };
+                sendResponse(QJsonDocument(response).toJson());
+
+                // Od razu wyślij aktualizację statusu do wszystkich znajomych
+                sendFriendsStatusUpdate();
+
+                qDebug() << "User" << userId << "status updated to:" << newStatus;
+            } else {
+                sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Failed to update status")).toJson());
+                qWarning() << "Failed to update status for user" << userId;
+            }
+        } else {
+            sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Invalid status update data")).toJson());
+            qWarning() << "Invalid status update request received";
+        }
     }
     else if (type == Protocol::MessageType::GET_MESSAGES) {
         handleMessageRequest();
@@ -383,8 +414,14 @@ QJsonObject ClientSession::prepareFriendsListResponse()
 
     for (const auto& friend_ : friendsList) {
         QJsonObject friendObj;
-        friendObj["id"] = static_cast<int>(friend_.first);
+        int friendId = static_cast<int>(friend_.first);
+        friendObj["id"] = friendId;
         friendObj["username"] = friend_.second;
+
+        // Pobierz status znajomego
+        bool isOnline = dbManager->getUserStatus(friendId, sessionConnectionName);
+        friendObj["status"] = isOnline ? Protocol::UserStatus::ONLINE : Protocol::UserStatus::OFFLINE;
+
         friendsArray.append(friendObj);
     }
 

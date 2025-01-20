@@ -10,6 +10,9 @@
 #include <QFile>
 #include <QDir>
 
+DatabaseManager::DatabaseConfig DatabaseManager::DatabaseConfig::instance;
+bool DatabaseManager::mainInitialized = false;
+
 DatabaseManager::DatabaseManager(QObject *parent)
     : QObject(parent)
     , configFilePath("config/database.conf")
@@ -43,53 +46,43 @@ void DatabaseManager::setConfigPath(const QString& path)
 bool DatabaseManager::init()
 {
     qDebug() << "Metoda DatabaseManager::init() została wywołana";
+    qDebug() << "Dostępne sterowniki SQL:" << QSqlDatabase::drivers();
 
-    if (initialized) {
-        qDebug() << "Baza danych jest już zainicjalizowana";
-        return true;
-    }
-
-    if (!QFile::exists(configFilePath)) {
-        qCritical() << "Plik konfiguracyjny bazy danych nie został znaleziony:" << configFilePath;
+    if (!QSqlDatabase::isDriverAvailable("QMYSQL")) {
+        qCritical() << "Sterownik QMYSQL nie jest dostępny!";
         return false;
     }
 
+    // Wczytaj konfigurację
     QSettings settings(configFilePath, QSettings::IniFormat);
-    settings.beginGroup("Database");
 
-    QString hostname = settings.value("hostname", "localhost").toString();
-    QString databaseName = settings.value("database", "jupiter_db").toString();
-    QString username = settings.value("username", "root").toString();
-    QString password = settings.value("password", "").toString();
-    int port = settings.value("port", 3306).toInt();
+    // Zapisz konfigurację w statycznej instancji
+    DatabaseConfig::instance.hostname = settings.value("Database/hostname", "localhost").toString();
+    DatabaseConfig::instance.database = settings.value("Database/database", "jupiter_db").toString();
+    DatabaseConfig::instance.username = settings.value("Database/username", "root").toString();
+    DatabaseConfig::instance.password = settings.value("Database/password", "").toString();
+    DatabaseConfig::instance.port = settings.value("Database/port", 3306).toInt();
 
-    settings.endGroup();
-
-    if (hostname.isEmpty() || databaseName.isEmpty() || username.isEmpty()) {
-        qCritical() << "Brak wymaganych parametrów konfiguracji bazy danych";
-        return false;
-    }
-
-    database = QSqlDatabase::addDatabase("QMYSQL");
-    database.setHostName(hostname);
-    database.setDatabaseName(databaseName);
-    database.setUserName(username);
-    database.setPassword(password);
-    database.setPort(port);
+    // Utwórz główne połączenie
+    database = QSqlDatabase::addDatabase("QMYSQL", "MainConnection");
+    database.setHostName(DatabaseConfig::instance.hostname);
+    database.setDatabaseName(DatabaseConfig::instance.database);
+    database.setUserName(DatabaseConfig::instance.username);
+    database.setPassword(DatabaseConfig::instance.password);
+    database.setPort(DatabaseConfig::instance.port);
 
     if (!database.open()) {
-        qCritical() << "Nie udało się otworzyć bazy danych:" << database.lastError().text();
+        qWarning() << "Failed to open database:" << database.lastError().text();
         return false;
     }
 
     if (!createTablesIfNotExist()) {
-        qCritical() << "Nie udało się utworzyć tabel bazy danych";
-        database.close();
         return false;
     }
 
     initialized = true;
-    qInfo() << "Baza danych została pomyślnie zainicjalizowana";
+    mainInitialized = true;  // Ustaw flagę statyczną
+    qDebug() << "Baza danych została pomyślnie zainicjalizowana";
     return true;
 }
 
@@ -131,8 +124,20 @@ bool DatabaseManager::createTablesIfNotExist()
 
 bool DatabaseManager::authenticateUser(const QString& username, const QString& password, quint32& userId)
 {
+    qDebug() << "=== Starting authentication for user:" << username << "===";
+
+    // Sprawdź stan bazy danych
+    if (!database.isOpen()) {
+        qWarning() << "Database is not open during authentication!";
+        if (!database.open()) {
+            qWarning() << "Failed to reopen database:" << database.lastError().text();
+            return false;
+        }
+    }
+
     if (!database.transaction()) {
         qWarning() << "Failed to start transaction for user authentication";
+        qWarning() << "Transaction error:" << database.lastError().text();
         return false;
     }
 
@@ -141,16 +146,39 @@ bool DatabaseManager::authenticateUser(const QString& username, const QString& p
         query.prepare(DatabaseQueries::Users::AUTHENTICATE);
         query.addBindValue(username);
 
-        if (!query.exec() || !query.next()) {
-            throw std::runtime_error("Authentication failed for user: " + username.toStdString());
+        qDebug() << "Executing authentication query for username:" << username;
+
+        if (!query.exec()) {
+            qWarning() << "Query execution failed:" << query.lastError().text();
+            throw std::runtime_error("Authentication query failed");
+        }
+
+        if (!query.next()) {
+            qWarning() << "No user found with username:" << username;
+            throw std::runtime_error("User not found");
         }
 
         userId = query.value(0).toUInt();
         QString storedHash = query.value(1).toString();
         QString salt = query.value(2).toString();
 
-        if (!verifyPassword(password + salt, storedHash)) {
-            throw std::runtime_error("Invalid password for user: " + username.toStdString());
+        qDebug() << "Authentication details:";
+        qDebug() << "- User ID:" << userId;
+        qDebug() << "- Stored hash:" << storedHash;
+        qDebug() << "- Salt:" << salt;
+        qDebug() << "- Input password length:" << password.length();
+
+        QString saltedPassword = password + salt;
+        QString computedHash = hashPassword(saltedPassword);
+
+        qDebug() << "Password verification:";
+        qDebug() << "- Salted password:" << saltedPassword;
+        qDebug() << "- Computed hash:" << computedHash;
+        qDebug() << "- Stored hash:" << storedHash;
+        qDebug() << "- Hashes match:" << (computedHash == storedHash);
+
+        if (!verifyPassword(saltedPassword, storedHash)) {
+            throw std::runtime_error("Invalid password");
         }
 
         if (!updateUserStatus(userId, "online")) {
@@ -158,10 +186,9 @@ bool DatabaseManager::authenticateUser(const QString& username, const QString& p
         }
 
         if (!database.commit()) {
-            throw std::runtime_error("Failed to commit authentication");
+            throw std::runtime_error("Failed to commit transaction");
         }
 
-        qInfo() << "User authenticated successfully:" << username;
         return true;
     }
     catch (const std::exception& e) {
@@ -419,9 +446,11 @@ QVector<QPair<QString, QString>> DatabaseManager::getChatHistory(quint32 userId,
     }
 }
 
-bool DatabaseManager::verifyPassword(const QString& password, const QString& hash)
+bool DatabaseManager::verifyPassword(const QString& saltedPassword, const QString& hash)
 {
-    return hashPassword(password) == hash;
+    QString computedHash = hashPassword(saltedPassword);
+    qDebug() << "Comparing hashes:" << computedHash << "vs" << hash;
+    return computedHash == hash;
 }
 
 bool DatabaseManager::validateUsername(const QString& username)
@@ -510,4 +539,42 @@ bool DatabaseManager::createFriendsList(quint32 userId)
         database.rollback();
         return false;
     }
+}
+
+bool DatabaseManager::cloneConnectionForThread(const QString& connectionName)
+{
+    qDebug() << "Cloning database connection for session:" << connectionName;
+
+    if (!mainInitialized) {  // Używamy statycznej flagi
+        qWarning() << "Cannot clone connection - main database not initialized";
+        return false;
+    }
+
+    if (QSqlDatabase::contains(connectionName)) {
+        qDebug() << "Removing existing connection:" << connectionName;
+        QSqlDatabase::removeDatabase(connectionName);
+    }
+
+    QSqlDatabase newDb = QSqlDatabase::addDatabase("QMYSQL", connectionName);
+
+    // Użyj zapisanej konfiguracji
+    newDb.setHostName(DatabaseConfig::instance.hostname);
+    newDb.setDatabaseName(DatabaseConfig::instance.database);
+    newDb.setUserName(DatabaseConfig::instance.username);
+    newDb.setPassword(DatabaseConfig::instance.password);
+    newDb.setPort(DatabaseConfig::instance.port);
+
+    if (!newDb.open()) {
+        qWarning() << "Failed to open session database connection:"
+                   << connectionName << "-" << newDb.lastError().text();
+        return false;
+    }
+
+    qDebug() << "Successfully created new database connection:" << connectionName;
+
+    // Ustaw to połączenie jako aktywne dla tej instancji
+    database = newDb;
+    initialized = true;
+
+    return true;
 }

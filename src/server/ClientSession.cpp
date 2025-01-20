@@ -14,6 +14,7 @@
 #include <QJsonArray>
 #include <QUuid>
 #include <QDateTime>
+#include <QThread>
 
 ClientSession::ClientSession(QTcpSocket* socket, DatabaseManager* dbManager, QObject *parent)
     : QObject(parent)
@@ -21,15 +22,32 @@ ClientSession::ClientSession(QTcpSocket* socket, DatabaseManager* dbManager, QOb
     , dbManager(dbManager)
     , userId(0)
     , isAuthenticated(false)
+    , state(Protocol::SessionState::INITIAL)
     , lastPingTime(QDateTime::currentMSecsSinceEpoch())
     , missedPings(0)
 {
     qDebug() << "ClientSession constructor called";
 
+    // Tworzymy unikalną nazwę połączenia używając adresu obiektu sesji
+    sessionConnectionName = QString("Session_%1").arg(
+        reinterpret_cast<quintptr>(this),
+        0, 16);
+
+    qDebug() << "Creating new database connection:" << sessionConnectionName;
+
+    if (!dbManager->cloneConnectionForThread(sessionConnectionName)) {
+        qWarning() << "Failed to create database connection for session:"
+                   << sessionConnectionName;
+    } else {
+        qDebug() << "Successfully created database connection for session:"
+                 << sessionConnectionName;
+    }
+
     connect(socket, &QTcpSocket::readyRead,
             this, &ClientSession::handleReadyRead);
     connect(socket, &QTcpSocket::errorOccurred,
             this, &ClientSession::handleError);
+
 
     // Konfiguracja timerów
     statusUpdateTimer.setInterval(Protocol::Timeouts::STATUS_UPDATE);
@@ -51,6 +69,18 @@ ClientSession::ClientSession(QTcpSocket* socket, DatabaseManager* dbManager, QOb
 ClientSession::~ClientSession()
 {
     qDebug() << "ClientSession destructor called";
+
+    // Zamykamy i usuwamy połączenie z bazą danych
+    if (QSqlDatabase::contains(sessionConnectionName)) {
+        qDebug() << "Closing database connection:" << sessionConnectionName;
+        {
+            QSqlDatabase db = QSqlDatabase::database(sessionConnectionName);
+            if (db.isOpen()) {
+                db.close();
+            }
+        }
+        QSqlDatabase::removeDatabase(sessionConnectionName);
+    }
 
     statusUpdateTimer.stop();
     messagesCheckTimer.stop();
@@ -103,11 +133,14 @@ void ClientSession::handleError(QAbstractSocket::SocketError socketError)
 
 void ClientSession::processMessage(const QByteArray& message)
 {
+    qDebug() << "SERVER: Received message of size:" << message.size();
+
     QJsonParseError parseError;
     QJsonDocument doc = QJsonDocument::fromJson(message, &parseError);
 
     if (parseError.error != QJsonParseError::NoError) {
-        qWarning() << "Failed to parse message:" << parseError.errorString();
+        qWarning() << "SERVER: Failed to parse message:" << parseError.errorString();
+        qWarning() << "SERVER: Raw message:" << message;
         sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Invalid JSON format")).toJson());
         return;
     }
@@ -115,9 +148,22 @@ void ClientSession::processMessage(const QByteArray& message)
     QJsonObject json = doc.object();
     QString type = json["type"].toString();
 
-    qDebug() << "Received message type:" << type;
+    qDebug() << "SERVER: Received message type:" << type;
 
-    if (!isAuthenticated && type != Protocol::MessageType::LOGIN && type != Protocol::MessageType::REGISTER) {
+    // Zawsze akceptuj PING/PONG
+    if (type == Protocol::MessageType::PING) {
+        qDebug() << "SERVER: Processing PING message";
+        handlePing(json);
+        return;
+    }
+    else if (type == Protocol::MessageType::PONG) {
+        lastPingTime = QDateTime::currentMSecsSinceEpoch();
+        missedPings = 0;
+        return;
+    }
+
+    // Dla pozostałych wiadomości sprawdź stan
+    if (!isAuthenticated && !Protocol::AllowedMessages::INITIAL.contains(type)) {
         sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Not authenticated")).toJson());
         return;
     }
@@ -127,9 +173,6 @@ void ClientSession::processMessage(const QByteArray& message)
     }
     else if (type == Protocol::MessageType::REGISTER) {
         handleRegister(json);
-    }
-    else if (type == Protocol::MessageType::PING) {
-        handlePing(json);
     }
     else if (type == Protocol::MessageType::MESSAGE_ACK) {
         handleMessageAck(json);
@@ -161,11 +204,23 @@ void ClientSession::handleLogin(const QJsonObject& json)
     QString password = json["password"].toString();
 
     if (username.isEmpty() || password.isEmpty()) {
+        state = Protocol::SessionState::INITIAL;
         sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Invalid credentials")).toJson());
         return;
     }
 
+    // Użyj połączenia specyficznego dla tej sesji
+    QSqlDatabase sessionDb = QSqlDatabase::database(sessionConnectionName);
+    if (!sessionDb.isOpen()) {
+        qWarning() << "Session database connection is not open! Attempting to reopen...";
+        if (!dbManager->cloneConnectionForThread(sessionConnectionName)) {
+            sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Database connection error")).toJson());
+            return;
+        }
+    }
+
     if (dbManager->authenticateUser(username, password, userId)) {
+        state = Protocol::SessionState::AUTHENTICATED;
         isAuthenticated = true;
         statusUpdateTimer.start();
         messagesCheckTimer.start();
@@ -182,6 +237,7 @@ void ClientSession::handleLogin(const QJsonObject& json)
 
         qDebug() << "User" << username << "logged in successfully";
     } else {
+        state = Protocol::SessionState::INITIAL;
         sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Authentication failed")).toJson());
         qDebug() << "Failed login attempt for user:" << username;
     }
@@ -233,26 +289,18 @@ void ClientSession::handleLogout()
     }
 }
 
-// ClientSession.cpp
 void ClientSession::handlePing(const QJsonObject& message)
 {
-    qDebug() << "Handling ping message:" << message;
+    qDebug() << "SERVER: Handling PING message at"
+             << QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss.zzz");
 
     lastPingTime = QDateTime::currentMSecsSinceEpoch();
     missedPings = 0;
 
-    // Sprawdź czy wiadomość ping zawiera timestamp
-    if (!message.contains("timestamp")) {
-        qWarning() << "Ping message missing timestamp";
-        sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Invalid ping message")).toJson());
-        return;
-    }
-
     qint64 timestamp = message["timestamp"].toInteger();
     QJsonObject pong = Protocol::MessageStructure::createPong(timestamp);
 
-    qDebug() << "Sending pong response:" << pong;
-
+    qDebug() << "SERVER: Sending PONG response with timestamp:" << timestamp;
     sendResponse(QJsonDocument(pong).toJson());
 }
 
@@ -288,9 +336,27 @@ void ClientSession::handleSendMessage(const QJsonObject& json)
 
 void ClientSession::checkConnectionStatus()
 {
+    if (!socket || !socket->isValid() || socket->state() != QAbstractSocket::ConnectedState) {
+        return;
+    }
+
     qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
+
+    // Wysyłamy ping do klienta
+    QJsonObject pingMessage = Protocol::MessageStructure::createPing();
+    pingMessage["timestamp"] = currentTime;
+
+    qDebug() << "SERVER: Sending PING at"
+             << QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss.zzz")
+             << "with timestamp:" << currentTime;
+
+    sendResponse(QJsonDocument(pingMessage).toJson());
+
+    // Sprawdzamy odpowiedzi na pingi
     if (currentTime - lastPingTime > Protocol::Timeouts::CONNECTION) {
         missedPings++;
+        qWarning() << "Missed PONG from client - count:" << missedPings;
+
         if (missedPings >= MAX_MISSED_PINGS) {
             qWarning() << "Connection timeout - closing session";
             socket->disconnectFromHost();
@@ -368,23 +434,12 @@ void ClientSession::sendResponse(const QByteArray& response)
         return;
     }
 
-    QJsonDocument doc = QJsonDocument::fromJson(response);
-    QJsonObject json = doc.object();
-
-    if (json["type"] == Protocol::MessageType::SEND_MESSAGE) {
-        QString messageId = QUuid::createUuid().toString();
-        json["message_id"] = messageId;
-        unconfirmedMessages[messageId] = json;
-
-        QTimer::singleShot(Protocol::Timeouts::REQUEST, [this, messageId]() {
-            if (unconfirmedMessages.contains(messageId)) {
-                qDebug() << "Resending unconfirmed message:" << messageId;
-                sendResponse(QJsonDocument(unconfirmedMessages[messageId]).toJson());
-            }
-        });
+    qint64 written = socket->write(response);
+    if (written <= 0) {
+        qWarning() << "Failed to write to socket";
+        return;
     }
 
-    socket->write(QJsonDocument(json).toJson());
     socket->flush();
 }
 

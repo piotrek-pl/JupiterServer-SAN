@@ -12,6 +12,16 @@ class DatabaseManager : public QObject
     Q_OBJECT
 
 public:
+    struct DatabaseConfig {
+        QString hostname;
+        QString database;
+        QString username;
+        QString password;
+        int port;
+
+        static DatabaseConfig instance;
+    };
+
     explicit DatabaseManager(QObject *parent = nullptr);
     explicit DatabaseManager(const QString& configPath, QObject *parent = nullptr);
     ~DatabaseManager();
@@ -21,6 +31,7 @@ public:
     void setConfigPath(const QString& path);
     QSqlDatabase& getDatabase() { return database; }
     bool isInitialized() const { return initialized; }
+    bool cloneConnectionForThread(const QString& connectionName);
 
     #ifdef QT_DEBUG
     bool reinitializeTables() { return createTablesIfNotExist(); }
@@ -59,10 +70,13 @@ private:
     static constexpr int MAX_PASSWORD_LENGTH = 64;
     static constexpr int SALT_LENGTH = 16;
 
+    static bool mainInitialized;
+
     // Pola prywatne
     QString configFilePath;
     QSqlDatabase database;
     bool initialized;
+    QString mainConnectionName;
 };
 
 #endif // DATABASEMANAGER_H

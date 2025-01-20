@@ -56,6 +56,8 @@ private:
     QTcpSocket* socket;
     DatabaseManager* dbManager;
     quint32 userId;
+    QString state;  // Obecny stan sesji
+    QString sessionConnectionName;
     bool isAuthenticated;
     QTimer statusUpdateTimer;
     QTimer messagesCheckTimer;

@@ -1,10 +1,16 @@
+/**
+ * @file Protocol.cpp
+ * @brief Network protocol implementation
+ * @author piotrek-pl
+ * @date 2025-01-20 13:43:49
+ */
+
 #include "Protocol.h"
 
 namespace Protocol {
 namespace MessageStructure {
 
-QJsonObject createLoginRequest(const QString& username, const QString& password)
-{
+QJsonObject createLoginRequest(const QString& username, const QString& password) {
     return QJsonObject{
         {"type", MessageType::LOGIN},
         {"username", username},
@@ -13,8 +19,24 @@ QJsonObject createLoginRequest(const QString& username, const QString& password)
     };
 }
 
-QJsonObject createMessage(int receiverId, const QString& content)
-{
+QJsonObject createRegisterRequest(const QString& username, const QString& password, const QString& email) {
+    return QJsonObject{
+        {"type", MessageType::REGISTER},
+        {"username", username},
+        {"password", password},
+        {"email", email},
+        {"protocol_version", PROTOCOL_VERSION}
+    };
+}
+
+QJsonObject createLogoutRequest() {
+    return QJsonObject{
+        {"type", MessageType::LOGOUT},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
+QJsonObject createMessage(int receiverId, const QString& content) {
     return QJsonObject{
         {"type", MessageType::SEND_MESSAGE},
         {"receiver_id", receiverId},
@@ -23,24 +45,21 @@ QJsonObject createMessage(int receiverId, const QString& content)
     };
 }
 
-QJsonObject createPing()
-{
-    QJsonObject msg;
-    msg["type"] = MessageType::PING;
-    msg["timestamp"] = QDateTime::currentMSecsSinceEpoch();
-    return msg;
+QJsonObject createPing() {
+    return QJsonObject{
+        {"type", MessageType::PING},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
 }
 
-QJsonObject createPong(qint64 timestamp)
-{
-    QJsonObject msg;
-    msg["type"] = MessageType::PONG;
-    msg["timestamp"] = timestamp;
-    return msg;
+QJsonObject createPong(qint64 timestamp) {
+    return QJsonObject{
+        {"type", MessageType::PONG},
+        {"timestamp", timestamp}
+    };
 }
 
-QJsonObject createError(const QString& message)
-{
+QJsonObject createError(const QString& message) {
     return QJsonObject{
         {"type", MessageType::ERROR},
         {"message", message},
@@ -48,8 +67,7 @@ QJsonObject createError(const QString& message)
     };
 }
 
-QJsonObject createMessageAck(const QString& messageId)
-{
+QJsonObject createMessageAck(const QString& messageId) {
     return QJsonObject{
         {"type", MessageType::MESSAGE_ACK},
         {"message_id", messageId},
@@ -57,8 +75,7 @@ QJsonObject createMessageAck(const QString& messageId)
     };
 }
 
-QJsonObject createStatusUpdate(const QString& status)
-{
+QJsonObject createStatusUpdate(const QString& status) {
     return QJsonObject{
         {"type", MessageType::STATUS_UPDATE},
         {"status", status},
@@ -66,8 +83,14 @@ QJsonObject createStatusUpdate(const QString& status)
     };
 }
 
-QJsonObject createFriendsStatusUpdate(const QJsonArray& friends)
-{
+QJsonObject createGetFriendsList() {
+    return QJsonObject{
+        {"type", MessageType::GET_FRIENDS_LIST},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
+QJsonObject createFriendsStatusUpdate(const QJsonArray& friends) {
     return QJsonObject{
         {"type", MessageType::FRIENDS_STATUS_UPDATE},
         {"friends", friends},

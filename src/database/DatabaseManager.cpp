@@ -42,12 +42,15 @@ void DatabaseManager::setConfigPath(const QString& path)
 
 bool DatabaseManager::init()
 {
+    qDebug() << "Metoda DatabaseManager::init() została wywołana";
+
     if (initialized) {
+        qDebug() << "Baza danych jest już zainicjalizowana";
         return true;
     }
 
     if (!QFile::exists(configFilePath)) {
-        qCritical() << "Database configuration file not found:" << configFilePath;
+        qCritical() << "Plik konfiguracyjny bazy danych nie został znaleziony:" << configFilePath;
         return false;
     }
 
@@ -63,7 +66,7 @@ bool DatabaseManager::init()
     settings.endGroup();
 
     if (hostname.isEmpty() || databaseName.isEmpty() || username.isEmpty()) {
-        qCritical() << "Missing required database configuration parameters";
+        qCritical() << "Brak wymaganych parametrów konfiguracji bazy danych";
         return false;
     }
 
@@ -75,18 +78,18 @@ bool DatabaseManager::init()
     database.setPort(port);
 
     if (!database.open()) {
-        qCritical() << "Failed to open database:" << database.lastError().text();
+        qCritical() << "Nie udało się otworzyć bazy danych:" << database.lastError().text();
         return false;
     }
 
     if (!createTablesIfNotExist()) {
-        qCritical() << "Failed to create database tables";
+        qCritical() << "Nie udało się utworzyć tabel bazy danych";
         database.close();
         return false;
     }
 
     initialized = true;
-    qInfo() << "Database initialized successfully";
+    qInfo() << "Baza danych została pomyślnie zainicjalizowana";
     return true;
 }
 

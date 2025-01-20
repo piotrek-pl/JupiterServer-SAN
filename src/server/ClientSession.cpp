@@ -24,6 +24,8 @@ ClientSession::ClientSession(QTcpSocket* socket, DatabaseManager* dbManager, QOb
     , lastPingTime(QDateTime::currentMSecsSinceEpoch())
     , missedPings(0)
 {
+    qDebug() << "ClientSession constructor called";
+
     connect(socket, &QTcpSocket::readyRead,
             this, &ClientSession::handleReadyRead);
     connect(socket, &QTcpSocket::errorOccurred,
@@ -48,6 +50,8 @@ ClientSession::ClientSession(QTcpSocket* socket, DatabaseManager* dbManager, QOb
 
 ClientSession::~ClientSession()
 {
+    qDebug() << "ClientSession destructor called";
+
     statusUpdateTimer.stop();
     messagesCheckTimer.stop();
     pingTimer.stop();

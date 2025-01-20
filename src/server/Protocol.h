@@ -12,11 +12,11 @@ constexpr int PROTOCOL_VERSION = 1;
 
 // Timeouty (w milisekundach)
 namespace Timeouts {
-constexpr int CONNECTION = 5000;
-constexpr int REQUEST = 3000;
-constexpr int PING = 1000;
-constexpr int RECONNECT = 5000;
-constexpr int STATUS_UPDATE = 3000;
+constexpr int CONNECTION = 30000; // 30 sekund
+constexpr int REQUEST = 15000; // 15 sekund
+constexpr int PING = 10000; // 10 sekund
+constexpr int RECONNECT = 5000; // 5 sekund
+constexpr int STATUS_UPDATE = 15000; // 15 sekund
 }
 
 // Typy wiadomości
@@ -26,6 +26,7 @@ const QString LOGIN_RESPONSE = "login_response";
 const QString REGISTER = "register";
 const QString REGISTER_RESPONSE = "register_response";
 const QString LOGOUT = "logout";
+const QString LOGOUT_RESPONSE = "logout_response";  // Dodaj LOGOUT_RESPONSE
 const QString GET_STATUS = "get_status";
 const QString STATUS_UPDATE = "status_response";
 const QString GET_FRIENDS_LIST = "get_friends_list";

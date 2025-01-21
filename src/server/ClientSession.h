@@ -44,6 +44,7 @@ private:
     void handlePing(const QJsonObject& message);
     void handleMessageAck(const QJsonObject& message);
     void handleSendMessage(const QJsonObject& json);
+    void processBuffer();
 
     // Helper methods
     QJsonObject prepareFriendsListResponse();
@@ -65,6 +66,7 @@ private:
     qint64 lastPingTime;
     int missedPings;
     QHash<QString, QJsonObject> unconfirmedMessages;
+    QByteArray buffer;
 };
 
 #endif // CLIENTSESSION_H

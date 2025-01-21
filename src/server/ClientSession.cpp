@@ -97,13 +97,10 @@ ClientSession::~ClientSession()
 
 void ClientSession::handleReadyRead()
 {
-    QByteArray data = socket->readAll();
-    if (data.isEmpty()) {
-        qWarning() << "Received empty data from client";
-        return;
-    }
+    if (!socket->bytesAvailable()) return;
 
-    processMessage(data);
+    buffer.append(socket->readAll());
+    processBuffer();
 }
 
 void ClientSession::handleError(QAbstractSocket::SocketError socketError)
@@ -498,4 +495,37 @@ void ClientSession::sendPendingMessages()
             sendResponse(QJsonDocument(response).toJson());
         }
     }
+}
+
+void ClientSession::processBuffer()
+{
+    bool foundJson;
+    do {
+        foundJson = false;
+        int startPos = buffer.indexOf('{');
+        if (startPos >= 0) {
+            int endPos = -1;
+            int braceCount = 1;
+
+            for (int i = startPos + 1; i < buffer.size(); ++i) {
+                if (buffer[i] == '{') braceCount++;
+                else if (buffer[i] == '}') {
+                    braceCount--;
+                    if (braceCount == 0) {
+                        endPos = i;
+                        break;
+                    }
+                }
+            }
+
+            if (endPos > startPos) {
+                QByteArray jsonData = buffer.mid(startPos, endPos - startPos + 1);
+                qDebug() << "SERVER: Processing JSON of size:" << jsonData.size();
+
+                processMessage(jsonData);  // Wywołujemy istniejącą metodę processMessage
+                buffer.remove(0, endPos + 1);
+                foundJson = true;
+            }
+        }
+    } while (foundJson);
 }

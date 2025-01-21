@@ -1,5 +1,6 @@
 #include "DatabaseManager.h"
 #include "DatabaseQueries.h"
+#include "server/Protocol.h"
 #include <QCryptographicHash>
 #include <QDateTime>
 #include <QRandomGenerator>
@@ -253,22 +254,49 @@ bool DatabaseManager::getUserStatus(quint32 userId, QString& status)
         query.prepare("SELECT status FROM users WHERE id = ?");
         query.addBindValue(userId);
 
-        if (!query.exec() || !query.next()) {
-            qWarning() << "Failed to get user status:" << query.lastError().text();
+        if (!query.exec()) {
+            qWarning() << "Failed to execute status query:" << query.lastError().text();
             return false;
         }
 
-        status = query.value(0).toString();
+        if (!query.next()) {
+            qWarning() << "No status found for user ID:" << userId;
+            status = Protocol::UserStatus::OFFLINE; // Domyślny status
+            return true;
+        }
+
+        status = query.value(0).toString().toLower(); // Konwertuj na małe litery dla spójności
+
+        // Walidacja statusu
+        if (status != Protocol::UserStatus::ONLINE &&
+            status != Protocol::UserStatus::OFFLINE &&
+            status != Protocol::UserStatus::AWAY &&
+            status != Protocol::UserStatus::BUSY) {
+            qWarning() << "Invalid status in database:" << status << "for user ID:" << userId;
+            status = Protocol::UserStatus::OFFLINE;
+        }
+
         return true;
     }
     catch (const std::exception& e) {
         qWarning() << "Error getting user status:" << e.what();
+        status = Protocol::UserStatus::OFFLINE;
         return false;
     }
 }
 
 bool DatabaseManager::updateUserStatus(quint32 userId, const QString& status)
 {
+    // Walidacja statusu przed rozpoczęciem transakcji
+    QString normalizedStatus = status.toLower(); // Konwertuj na małe litery
+    if (normalizedStatus != Protocol::UserStatus::ONLINE &&
+        normalizedStatus != Protocol::UserStatus::OFFLINE &&
+        normalizedStatus != Protocol::UserStatus::AWAY &&
+        normalizedStatus != Protocol::UserStatus::BUSY) {
+        qWarning() << "Invalid status value:" << status;
+        return false;
+    }
+
     if (!database.transaction()) {
         qWarning() << "Failed to start transaction for status update";
         return false;
@@ -277,7 +305,7 @@ bool DatabaseManager::updateUserStatus(quint32 userId, const QString& status)
     try {
         QSqlQuery query(database);
         query.prepare(DatabaseQueries::Users::UPDATE_STATUS);
-        query.addBindValue(status);
+        query.addBindValue(normalizedStatus); // Używamy znormalizowanego statusu
         query.addBindValue(userId);
 
         if (!query.exec()) {
@@ -288,6 +316,7 @@ bool DatabaseManager::updateUserStatus(quint32 userId, const QString& status)
             throw std::runtime_error("Failed to commit status update");
         }
 
+        qDebug() << "Successfully updated status for user" << userId << "to:" << normalizedStatus;
         return true;
     }
     catch (const std::exception& e) {

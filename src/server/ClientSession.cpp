@@ -419,14 +419,24 @@ QJsonObject ClientSession::prepareFriendsListResponse()
         friendObj["username"] = friend_.second;
 
         // Pobierz status znajomego
-        bool isOnline = dbManager->getUserStatus(friendId, sessionConnectionName);
-        friendObj["status"] = isOnline ? Protocol::UserStatus::ONLINE : Protocol::UserStatus::OFFLINE;
+        QString status;
+        if (dbManager->getUserStatus(friendId, status)) {
+            friendObj["status"] = status;
+        } else {
+            qWarning() << "Failed to get status for user ID:" << friendId;
+            friendObj["status"] = Protocol::UserStatus::OFFLINE;
+        }
 
+        qDebug() << "Friend" << friend_.second << "status:" << friendObj["status"].toString();
         friendsArray.append(friendObj);
     }
 
     response["friends"] = friendsArray;
     response["timestamp"] = QDateTime::currentMSecsSinceEpoch();
+
+    // Debug - wyświetl całą odpowiedź
+    qDebug() << "Prepared friends list response:" << QJsonDocument(response).toJson();
+
     return response;
 }
 

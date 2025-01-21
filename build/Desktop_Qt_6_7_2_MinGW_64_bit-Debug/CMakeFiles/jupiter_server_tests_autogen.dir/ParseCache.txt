@@ -1308,6 +1308,7 @@ D:/programowanie/Qt/SAN/JupiterServer/src/server/ClientSession.h
  mdp:C:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/wchar.h
  mdp:D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/jupiter_server_tests_autogen/moc_predefs.h
  mdp:D:/programowanie/Qt/SAN/JupiterServer/src/server/ClientSession.h
+D:/programowanie/Qt/SAN/JupiterServer/tests/TestDatabaseQueries.h
 D:/programowanie/Qt/SAN/JupiterServer/src/server/Protocol.h
 D:/programowanie/Qt/SAN/JupiterServer/tests/ClientSessionTest.h
  mmc:Q_OBJECT
@@ -1970,7 +1971,6 @@ D:/programowanie/Qt/SAN/JupiterServer/tests/ClientSessionTest.h
  mdp:D:/programowanie/Qt/SAN/JupiterServer/src/server/ClientSession.h
  mdp:D:/programowanie/Qt/SAN/JupiterServer/tests/ClientSessionTest.h
  mdp:D:/programowanie/Qt/SAN/JupiterServer/tests/TestSocket.h
-D:/programowanie/Qt/SAN/JupiterServer/src/server/ClientSession.cpp
 D:/programowanie/Qt/SAN/JupiterServer/tests/TestSocket.h
  mmc:Q_OBJECT
  mdp:C:/Qt/6.7.2/mingw_64/include/QtCore/QByteArray
@@ -2295,12 +2295,12 @@ D:/programowanie/Qt/SAN/JupiterServer/tests/TestSocket.h
  mdp:D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/jupiter_server_tests_autogen/moc_predefs.h
  mdp:D:/programowanie/Qt/SAN/JupiterServer/tests/TestSocket.h
 D:/programowanie/Qt/SAN/JupiterServer/src/database/DatabaseManager.cpp
+D:/programowanie/Qt/SAN/JupiterServer/src/server/ClientSession.cpp
 D:/programowanie/Qt/SAN/JupiterServer/src/server/Protocol.cpp
 D:/programowanie/Qt/SAN/JupiterServer/tests/ClientSessionTest.cpp
  miu:moc_ClientSessionTest.cpp
 D:/programowanie/Qt/SAN/JupiterServer/tests/ProtocolTest.cpp
  miu:moc_ProtocolTest.cpp
+D:/programowanie/Qt/SAN/JupiterServer/tests/TestDatabaseQueries.cpp
 D:/programowanie/Qt/SAN/JupiterServer/tests/TestSocket.cpp
 D:/programowanie/Qt/SAN/JupiterServer/tests/main_test.cpp
-D:/programowanie/Qt/SAN/JupiterServer/tests/TestDatabaseQueries.h
-D:/programowanie/Qt/SAN/JupiterServer/tests/TestDatabaseQueries.cpp

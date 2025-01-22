@@ -164,6 +164,20 @@ void ClientSession::processMessage(const QByteArray& message)
     else if (type == Protocol::MessageType::REGISTER) {
         handleRegister(json);
     }
+    else if (type == Protocol::MessageType::GET_LATEST_MESSAGES) {
+        // Nowa obsługa pobierania najnowszych wiadomości
+        quint32 friendId = json["friend_id"].toInt();
+        int limit = json["limit"].toInt(Protocol::ChatHistory::MESSAGE_BATCH_SIZE);
+
+        messages = dbManager->getLatestMessages(userId, friendId, limit);
+        bool hasMore = dbManager->hasMoreHistory(userId, friendId, 0);
+
+        QJsonObject response = prepareMessagesResponse();
+        response["type"] = Protocol::MessageType::LATEST_MESSAGES_RESPONSE;
+        response["has_more"] = hasMore;
+        response["offset"] = messages.size(); // dla następnych zapytań
+        sendResponse(QJsonDocument(response).toJson());
+    }
     else if (type == Protocol::MessageType::GET_CHAT_HISTORY) {
         quint32 friendId = json["friend_id"].toInt();
         int offset = json["offset"].toInt(0);

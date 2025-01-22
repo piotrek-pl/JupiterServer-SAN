@@ -750,3 +750,43 @@ bool DatabaseManager::markChatAsRead(quint32 userId, quint32 friendId)
         return false;
     }
 }
+
+QVector<ChatMessage> DatabaseManager::getLatestMessages(quint32 userId1, quint32 userId2,
+                                                        int limit)
+{
+    QVector<ChatMessage> history;
+
+    if (!database.isOpen()) {
+        qWarning() << "Database is not open!";
+        return history;
+    }
+
+    QString tableName = getChatTableName(userId1, userId2);
+    if (!chatTableExists(tableName)) {
+        return history;
+    }
+
+    QString queryStr = QString(DatabaseQueries::Messages::GET_LATEST_MESSAGES)
+                           .arg(tableName)
+                           .arg(tableName)
+                           .arg(tableName);
+    QSqlQuery query(database);
+    query.prepare(queryStr);
+    query.bindValue(0, limit);
+
+    if (!query.exec()) {
+        qWarning() << "Failed to get latest messages:" << query.lastError().text();
+        return history;
+    }
+
+    while (query.next()) {
+        ChatMessage msg;
+        msg.username = query.value("username").toString();
+        msg.message = query.value("message").toString();
+        msg.timestamp = query.value("sent_at").toDateTime();
+        msg.isRead = !query.value("read_at").isNull();
+        history.append(msg);
+    }
+
+    return history;
+}

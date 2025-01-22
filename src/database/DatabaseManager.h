@@ -64,6 +64,8 @@ public:
     // Operacje na znajomych
     bool addFriend(quint32 userId, quint32 friendId);
     QVector<QPair<quint32, QString>> getFriendsList(quint32 userId);
+    QVector<ChatMessage> getLatestMessages(quint32 userId1, quint32 userId2,
+                                           int limit = Protocol::ChatHistory::MESSAGE_BATCH_SIZE);
 
 private:
     // Metody pomocnicze dla użytkowników

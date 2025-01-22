@@ -449,46 +449,64 @@ QVector<QPair<quint32, QString>> DatabaseManager::getFriendsList(quint32 userId)
     }
 }
 
-QVector<QPair<QString, QString>> DatabaseManager::getChatHistory(quint32 userId1, quint32 userId2, int limit)
+QVector<ChatMessage> DatabaseManager::getChatHistory(quint32 userId1, quint32 userId2,
+                                                     int offset, int limit)
 {
-    QVector<QPair<QString, QString>> messages;
+    QVector<ChatMessage> history;
+
+    if (!database.isOpen()) {
+        qWarning() << "Database is not open!";
+        return history;
+    }
+
     QString tableName = getChatTableName(userId1, userId2);
-
     if (!chatTableExists(tableName)) {
-        return messages;
+        return history;
     }
 
-    if (!database.transaction()) {
-        qWarning() << "Failed to start transaction for chat history";
-        return messages;
+    QString queryStr = QString(DatabaseQueries::Messages::GET_CHAT_HISTORY).arg(tableName);
+    QSqlQuery query(database);
+    query.prepare(queryStr);
+    query.bindValue(0, limit);
+    query.bindValue(1, offset);
+
+    if (!query.exec()) {
+        qWarning() << "Failed to get chat history:" << query.lastError().text();
+        return history;
     }
 
-    try {
-        QSqlQuery query(database);
-        query.prepare(DatabaseQueries::Messages::GET_CHAT_HISTORY.arg(tableName));
-        query.addBindValue(limit);
-
-        if (!query.exec()) {
-            throw std::runtime_error("Failed to get chat history: " + query.lastError().text().toStdString());
-        }
-
-        while (query.next()) {
-            QString sender = query.value(1).toString();
-            QString message = query.value(2).toString();
-            messages.append({sender, message});
-        }
-
-        if (!database.commit()) {
-            throw std::runtime_error("Failed to commit chat history query");
-        }
-
-        return messages;
+    while (query.next()) {
+        ChatMessage msg;
+        msg.username = query.value("username").toString();
+        msg.message = query.value("message").toString();
+        msg.timestamp = query.value("sent_at").toDateTime();
+        msg.isRead = !query.value("read_at").isNull();
+        history.append(msg);
     }
-    catch (const std::exception& e) {
-        qWarning() << "Error getting chat history:" << e.what();
-        database.rollback();
-        return messages;
+
+    return history;
+}
+
+bool DatabaseManager::hasMoreHistory(quint32 userId1, quint32 userId2, int offset)
+{
+    QString tableName = getChatTableName(userId1, userId2);
+    if (!chatTableExists(tableName)) {
+        return false;
     }
+
+    QString queryStr = QString(DatabaseQueries::Messages::GET_MESSAGES_COUNT).arg(tableName);
+    QSqlQuery query(database);
+
+    if (!query.exec(queryStr)) {
+        qWarning() << "Failed to get messages count:" << query.lastError().text();
+        return false;
+    }
+
+    if (query.next()) {
+        return query.value(0).toInt() > offset + Protocol::ChatHistory::MESSAGE_BATCH_SIZE;
+    }
+
+    return false;
 }
 
 bool DatabaseManager::verifyPassword(const QString& saltedPassword, const QString& hash)

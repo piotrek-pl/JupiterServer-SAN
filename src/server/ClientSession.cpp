@@ -2,7 +2,7 @@
  * @file ClientSession.cpp
  * @brief Implementation of the ClientSession class
  * @author piotrek-pl
- * @date 2025-01-19 16:53:42
+ * @date 2025-01-22 09:34:34
  */
 
 #include "ClientSession.h"
@@ -28,7 +28,6 @@ ClientSession::ClientSession(QTcpSocket* socket, DatabaseManager* dbManager, QOb
 {
     qDebug() << "ClientSession constructor called";
 
-    // Tworzymy unikalną nazwę połączenia używając adresu obiektu sesji
     sessionConnectionName = QString("Session_%1").arg(
         reinterpret_cast<quintptr>(this),
         0, 16);
@@ -48,8 +47,6 @@ ClientSession::ClientSession(QTcpSocket* socket, DatabaseManager* dbManager, QOb
     connect(socket, &QTcpSocket::errorOccurred,
             this, &ClientSession::handleError);
 
-
-    // Konfiguracja timerów
     statusUpdateTimer.setInterval(Protocol::Timeouts::STATUS_UPDATE);
     connect(&statusUpdateTimer, &QTimer::timeout,
             this, &ClientSession::sendFriendsStatusUpdate);
@@ -70,7 +67,6 @@ ClientSession::~ClientSession()
 {
     qDebug() << "ClientSession destructor called";
 
-    // Zamykamy i usuwamy połączenie z bazą danych
     if (QSqlDatabase::contains(sessionConnectionName)) {
         qDebug() << "Closing database connection:" << sessionConnectionName;
         {
@@ -122,7 +118,6 @@ void ClientSession::handleError(QAbstractSocket::SocketError socketError)
         qDebug() << "Unknown socket error occurred";
     }
 
-    // Informujemy bazę danych o rozłączeniu użytkownika
     if (isAuthenticated && userId > 0) {
         dbManager->updateUserStatus(userId, "offline");
     }
@@ -147,7 +142,6 @@ void ClientSession::processMessage(const QByteArray& message)
 
     qDebug() << "SERVER: Received message type:" << type;
 
-    // Zawsze akceptuj PING/PONG
     if (type == Protocol::MessageType::PING) {
         qDebug() << "SERVER: Processing PING message";
         handlePing(json);
@@ -159,7 +153,6 @@ void ClientSession::processMessage(const QByteArray& message)
         return;
     }
 
-    // Dla pozostałych wiadomości sprawdź stan
     if (!isAuthenticated && !Protocol::AllowedMessages::INITIAL.contains(type)) {
         sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Not authenticated")).toJson());
         return;
@@ -171,8 +164,30 @@ void ClientSession::processMessage(const QByteArray& message)
     else if (type == Protocol::MessageType::REGISTER) {
         handleRegister(json);
     }
-    else if (type == Protocol::MessageType::MESSAGE_ACK) {
-        handleMessageAck(json);
+    else if (type == Protocol::MessageType::GET_CHAT_HISTORY) {
+        quint32 friendId = json["friend_id"].toInt();
+        int offset = json["offset"].toInt(0);
+
+        messages = dbManager->getChatHistory(userId, friendId, offset);
+        bool hasMore = dbManager->hasMoreHistory(userId, friendId, offset);
+
+        QJsonObject response = prepareMessagesResponse();
+        response["has_more"] = hasMore;
+        response["offset"] = offset;
+        sendResponse(QJsonDocument(response).toJson());
+    }
+    else if (type == Protocol::MessageType::GET_MORE_HISTORY) {
+        quint32 friendId = json["friend_id"].toInt();
+        int offset = json["offset"].toInt(0);
+
+        messages = dbManager->getChatHistory(userId, friendId, offset);
+        bool hasMore = dbManager->hasMoreHistory(userId, friendId, offset);
+
+        QJsonObject response = prepareMessagesResponse();
+        response["type"] = Protocol::MessageType::MORE_HISTORY_RESPONSE;
+        response["has_more"] = hasMore;
+        response["offset"] = offset;
+        sendResponse(QJsonDocument(response).toJson());
     }
     else if (type == Protocol::MessageType::GET_FRIENDS_LIST) {
         handleFriendsListRequest();
@@ -184,17 +199,13 @@ void ClientSession::processMessage(const QByteArray& message)
         QString newStatus = json["status"].toString();
         if (!newStatus.isEmpty() && userId > 0) {
             if (dbManager->updateUserStatus(userId, newStatus)) {
-                // Przygotuj i wyślij odpowiedź potwierdzającą zmianę statusu
                 QJsonObject response{
                     {"type", Protocol::MessageType::STATUS_UPDATE},
                     {"status", newStatus},
                     {"timestamp", QDateTime::currentMSecsSinceEpoch()}
                 };
                 sendResponse(QJsonDocument(response).toJson());
-
-                // Od razu wyślij aktualizację statusu do wszystkich znajomych
                 sendFriendsStatusUpdate();
-
                 qDebug() << "User" << userId << "status updated to:" << newStatus;
             } else {
                 sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Failed to update status")).toJson());
@@ -204,9 +215,6 @@ void ClientSession::processMessage(const QByteArray& message)
             sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Invalid status update data")).toJson());
             qWarning() << "Invalid status update request received";
         }
-    }
-    else if (type == Protocol::MessageType::GET_MESSAGES) {
-        handleMessageRequest();
     }
     else if (type == Protocol::MessageType::SEND_MESSAGE) {
         handleSendMessage(json);
@@ -231,7 +239,6 @@ void ClientSession::handleLogin(const QJsonObject& json)
         return;
     }
 
-    // Użyj połączenia specyficznego dla tej sesji
     QSqlDatabase sessionDb = QSqlDatabase::database(sessionConnectionName);
     if (!sessionDb.isOpen()) {
         qWarning() << "Session database connection is not open! Attempting to reopen...";
@@ -316,20 +323,8 @@ void ClientSession::handlePing(const QJsonObject& message)
     qDebug() << "SERVER: Received PING from client at"
              << QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss.zzz");
 
-    // Tylko aktualizujemy czas ostatniego pinga
     lastPingTime = QDateTime::currentMSecsSinceEpoch();
     missedPings = 0;
-
-    // NIE wysyłamy odpowiedzi PONG
-}
-
-void ClientSession::handleMessageAck(const QJsonObject& message)
-{
-    QString messageId = message["message_id"].toString();
-    if (unconfirmedMessages.contains(messageId)) {
-        unconfirmedMessages.remove(messageId);
-        qDebug() << "Message" << messageId << "acknowledged";
-    }
 }
 
 void ClientSession::handleSendMessage(const QJsonObject& json)
@@ -361,7 +356,6 @@ void ClientSession::checkConnectionStatus()
 
     qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
 
-    // Wysyłamy ping do klienta
     QJsonObject pingMessage = Protocol::MessageStructure::createPing();
     pingMessage["timestamp"] = currentTime;
 
@@ -371,7 +365,6 @@ void ClientSession::checkConnectionStatus()
 
     sendResponse(QJsonDocument(pingMessage).toJson());
 
-    // Sprawdzamy odpowiedzi na pingi
     if (currentTime - lastPingTime > Protocol::Timeouts::CONNECTION) {
         missedPings++;
         qWarning() << "Missed PONG from client - count:" << missedPings;
@@ -395,12 +388,6 @@ void ClientSession::handleStatusRequest()
     sendResponse(QJsonDocument(response).toJson());
 }
 
-void ClientSession::handleMessageRequest()
-{
-    QJsonObject response = prepareMessagesResponse();
-    sendResponse(QJsonDocument(response).toJson());
-}
-
 QJsonObject ClientSession::prepareFriendsListResponse()
 {
     QJsonObject response;
@@ -415,7 +402,6 @@ QJsonObject ClientSession::prepareFriendsListResponse()
         friendObj["id"] = friendId;
         friendObj["username"] = friend_.second;
 
-        // Pobierz status znajomego
         QString status;
         if (dbManager->getUserStatus(friendId, status)) {
             friendObj["status"] = status;
@@ -431,7 +417,6 @@ QJsonObject ClientSession::prepareFriendsListResponse()
     response["friends"] = friendsArray;
     response["timestamp"] = QDateTime::currentMSecsSinceEpoch();
 
-    // Debug - wyświetl całą odpowiedź
     qDebug() << "Prepared friends list response:" << QJsonDocument(response).toJson();
 
     return response;
@@ -445,20 +430,19 @@ QJsonObject ClientSession::prepareStatusResponse()
 QJsonObject ClientSession::prepareMessagesResponse()
 {
     QJsonObject response;
-    response["type"] = Protocol::MessageType::PENDING_MESSAGES;
-
     QJsonArray messagesArray;
-    auto messages = dbManager->getChatHistory(userId, 0, 10);
 
     for (const auto& msg : messages) {
         QJsonObject msgObj;
-        msgObj["sender"] = msg.first;
-        msgObj["content"] = msg.second;
+        msgObj["sender"] = msg.username;
+        msgObj["content"] = msg.message;
+        msgObj["timestamp"] = msg.timestamp.toString(Qt::ISODate);
+        msgObj["isRead"] = msg.isRead;
         messagesArray.append(msgObj);
     }
 
+    response["type"] = Protocol::MessageType::CHAT_HISTORY_RESPONSE;
     response["messages"] = messagesArray;
-    response["timestamp"] = QDateTime::currentMSecsSinceEpoch();
     return response;
 }
 
@@ -522,7 +506,7 @@ void ClientSession::processBuffer()
                 QByteArray jsonData = buffer.mid(startPos, endPos - startPos + 1);
                 qDebug() << "SERVER: Processing JSON of size:" << jsonData.size();
 
-                processMessage(jsonData);  // Wywołujemy istniejącą metodę processMessage
+                processMessage(jsonData);
                 buffer.remove(0, endPos + 1);
                 foundJson = true;
             }

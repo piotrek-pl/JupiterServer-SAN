@@ -1,9 +1,15 @@
 D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/JupiterServer_autogen/3XOYHQ47YQ/moc_ClientSession.cpp: D:/programowanie/Qt/SAN/JupiterServer/src/server/ClientSession.h \
   D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/JupiterServer_autogen/moc_predefs.h \
+  C:/Qt/6.7.2/mingw_64/include/QtCore/QDateTime \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QHash \
+  C:/Qt/6.7.2/mingw_64/include/QtCore/QJsonArray \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QJsonObject \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QObject \
+  C:/Qt/6.7.2/mingw_64/include/QtCore/QPair \
+  C:/Qt/6.7.2/mingw_64/include/QtCore/QString \
+  C:/Qt/6.7.2/mingw_64/include/QtCore/QStringList \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QTimer \
+  C:/Qt/6.7.2/mingw_64/include/QtCore/QVector \
   C:/Qt/6.7.2/mingw_64/include/QtCore/q20functional.h \
   C:/Qt/6.7.2/mingw_64/include/QtCore/q20memory.h \
   C:/Qt/6.7.2/mingw_64/include/QtCore/q20type_traits.h \
@@ -57,6 +63,7 @@ D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/
   C:/Qt/6.7.2/mingw_64/include/QtCore/qiodevicebase.h \
   C:/Qt/6.7.2/mingw_64/include/QtCore/qiterable.h \
   C:/Qt/6.7.2/mingw_64/include/QtCore/qiterator.h \
+  C:/Qt/6.7.2/mingw_64/include/QtCore/qjsonarray.h \
   C:/Qt/6.7.2/mingw_64/include/QtCore/qjsonobject.h \
   C:/Qt/6.7.2/mingw_64/include/QtCore/qjsonvalue.h \
   C:/Qt/6.7.2/mingw_64/include/QtCore/qlatin1stringview.h \
@@ -126,6 +133,7 @@ D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/
   C:/Qt/6.7.2/mingw_64/include/QtCore/quuid.h \
   C:/Qt/6.7.2/mingw_64/include/QtCore/qvariant.h \
   C:/Qt/6.7.2/mingw_64/include/QtCore/qvarlengtharray.h \
+  C:/Qt/6.7.2/mingw_64/include/QtCore/qvector.h \
   C:/Qt/6.7.2/mingw_64/include/QtCore/qversiontagging.h \
   C:/Qt/6.7.2/mingw_64/include/QtCore/qxptype_traits.h \
   C:/Qt/6.7.2/mingw_64/include/QtCore/qyieldcpu.h \
@@ -136,6 +144,13 @@ D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/
   C:/Qt/6.7.2/mingw_64/include/QtNetwork/qtnetwork-config.h \
   C:/Qt/6.7.2/mingw_64/include/QtNetwork/qtnetworkexports.h \
   C:/Qt/6.7.2/mingw_64/include/QtNetwork/qtnetworkglobal.h \
+  C:/Qt/6.7.2/mingw_64/include/QtSql/QSqlDatabase \
+  C:/Qt/6.7.2/mingw_64/include/QtSql/QSqlQuery \
+  C:/Qt/6.7.2/mingw_64/include/QtSql/qsqldatabase.h \
+  C:/Qt/6.7.2/mingw_64/include/QtSql/qsqlquery.h \
+  C:/Qt/6.7.2/mingw_64/include/QtSql/qtsql-config.h \
+  C:/Qt/6.7.2/mingw_64/include/QtSql/qtsqlexports.h \
+  C:/Qt/6.7.2/mingw_64/include/QtSql/qtsqlglobal.h \
   C:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include-fixed/limits.h \
   C:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include-fixed/syslimits.h \
   C:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/algorithm \
@@ -334,4 +349,6 @@ D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/
   C:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/sys/types.h \
   C:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/time.h \
   C:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/vadefs.h \
-  C:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/wchar.h
+  C:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/wchar.h \
+  D:/programowanie/Qt/SAN/JupiterServer/src/database/DatabaseManager.h \
+  D:/programowanie/Qt/SAN/JupiterServer/src/server/Protocol.h

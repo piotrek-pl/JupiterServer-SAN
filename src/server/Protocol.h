@@ -49,6 +49,10 @@ const QString PENDING_MESSAGES = "pending_messages";
 const QString ERROR = "error";
 const QString PING = "ping";
 const QString PONG = "pong";
+const QString GET_CHAT_HISTORY = "get_chat_history";
+const QString CHAT_HISTORY_RESPONSE = "chat_history_response";
+const QString GET_MORE_HISTORY = "get_more_history";
+const QString MORE_HISTORY_RESPONSE = "more_history_response";
 }
 
 // Status użytkownika
@@ -91,7 +95,9 @@ const QStringList AUTHENTICATED = {
     MessageType::GET_FRIENDS_LIST,
     MessageType::GET_MESSAGES,
     MessageType::SEND_MESSAGE,
-    MessageType::MESSAGE_ACK
+    MessageType::MESSAGE_ACK,
+    MessageType::GET_CHAT_HISTORY,
+    MessageType::GET_MORE_HISTORY
 };
 
 const QStringList DISCONNECTING = {
@@ -125,6 +131,10 @@ QJsonObject createGetFriendsList();
 QJsonObject createFriendsStatusUpdate(const QJsonArray& friends);
 
 } // namespace MessageStructure
+
+namespace ChatHistory {
+const int MESSAGE_BATCH_SIZE = 20;  // ilość wiadomości w jednej paczce
+}
 
 // Walidacja wiadomości
 namespace MessageValidation {

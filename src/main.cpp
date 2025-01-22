@@ -126,31 +126,52 @@ void fillTestData(DatabaseManager* db) {
             throw std::runtime_error("Failed to add friends for test3");
         }
 
-        // Dodawanie testowych wiadomości
+        // Dodawanie testowych wiadomości - 50 wiadomości między każdą parą użytkowników
         qDebug() << "Adding test messages...";
 
-        // Wiadomości między test1 i test2
-        if (!db->storeMessage(1, 2, "Cześć test2! Co słychać?")) {
-            throw std::runtime_error("Failed to add message 1");
-        }
-        if (!db->storeMessage(2, 1, "Hej test1! Wszystko w porządku, dzięki!")) {
-            throw std::runtime_error("Failed to add message 2");
+        QDateTime baseTime = QDateTime::currentDateTime().addDays(-30); // Zaczynamy od 30 dni temu
+
+        // Wiadomości od test1 do test2 i test3
+        for (int i = 0; i < 50; ++i) {
+            QString messageToTest2 = QString("Wiadomość nr %1 od test1 do test2").arg(i + 1);
+            QString messageToTest3 = QString("Wiadomość nr %1 od test1 do test3").arg(i + 1);
+
+            if (!db->storeMessage(1, 2, messageToTest2)) {
+                throw std::runtime_error("Failed to add message from test1 to test2");
+            }
+            if (!db->storeMessage(1, 3, messageToTest3)) {
+                throw std::runtime_error("Failed to add message from test1 to test3");
+            }
         }
 
-        // Wiadomości między test1 i test3
-        if (!db->storeMessage(1, 3, "Hej test3! Jesteś tam?")) {
-            throw std::runtime_error("Failed to add message 3");
-        }
-        if (!db->storeMessage(3, 1, "Cześć test1! Tak, jestem!")) {
-            throw std::runtime_error("Failed to add message 4");
+        // Wiadomości od test2 do test1 i test3
+        for (int i = 0; i < 50; ++i) {
+            QString messageToTest1 = QString("Wiadomość nr %1 od test2 do test1").arg(i + 1);
+            QString messageToTest3 = QString("Wiadomość nr %1 od test2 do test3").arg(i + 1);
+
+            if (!db->storeMessage(2, 1, messageToTest1)) {
+                throw std::runtime_error("Failed to add message from test2 to test1");
+            }
+            if (!db->storeMessage(2, 3, messageToTest3)) {
+                throw std::runtime_error("Failed to add message from test2 to test3");
+            }
         }
 
-        // Wiadomości między test2 i test3
-        if (!db->storeMessage(2, 3, "Hej test3, jak się masz?")) {
-            throw std::runtime_error("Failed to add message 5");
+        // Wiadomości od test3 do test1 i test2
+        for (int i = 0; i < 50; ++i) {
+            QString messageToTest1 = QString("Wiadomość nr %1 od test3 do test1").arg(i + 1);
+            QString messageToTest2 = QString("Wiadomość nr %1 od test3 do test2").arg(i + 1);
+
+            if (!db->storeMessage(3, 1, messageToTest1)) {
+                throw std::runtime_error("Failed to add message from test3 to test1");
+            }
+            if (!db->storeMessage(3, 2, messageToTest2)) {
+                throw std::runtime_error("Failed to add message from test3 to test2");
+            }
         }
-        if (!db->storeMessage(3, 2, "Cześć test2! Wszystko dobrze!")) {
-            throw std::runtime_error("Failed to add message 6");
+
+        if (!database.commit()) {
+            throw std::runtime_error("Failed to commit transaction");
         }
 
         qDebug() << "Test data filled successfully";

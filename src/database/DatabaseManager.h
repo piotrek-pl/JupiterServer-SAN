@@ -6,6 +6,16 @@
 #include <QSqlQuery>
 #include <QPair>
 #include <QVector>
+#include <QDateTime>
+#include "server/Protocol.h"
+
+// Struktura reprezentująca wiadomość w chacie
+struct ChatMessage {
+    QString username;
+    QString message;
+    QDateTime timestamp;
+    bool isRead;
+};
 
 class DatabaseManager : public QObject
 {
@@ -45,7 +55,10 @@ public:
 
     // Operacje na wiadomościach - nowa implementacja chatów
     bool storeMessage(quint32 senderId, quint32 receiverId, const QString& message);
-    QVector<QPair<QString, QString>> getChatHistory(quint32 userId1, quint32 userId2, int limit = 50);
+    QVector<ChatMessage> getChatHistory(quint32 userId1, quint32 userId2,
+                                        int offset = 0,
+                                        int limit = Protocol::ChatHistory::MESSAGE_BATCH_SIZE);
+    bool hasMoreHistory(quint32 userId1, quint32 userId2, int offset);
     bool markChatAsRead(quint32 userId, quint32 friendId);
 
     // Operacje na znajomych

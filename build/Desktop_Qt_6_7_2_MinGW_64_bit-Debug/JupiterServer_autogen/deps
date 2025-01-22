@@ -1,6 +1,8 @@
 JupiterServer_autogen/timestamp: \
+	C:/Qt/6.7.2/mingw_64/include/QtCore/QDateTime \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QFlags \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QHash \
+	C:/Qt/6.7.2/mingw_64/include/QtCore/QJsonArray \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QJsonObject \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QObject \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QPair \
@@ -8,6 +10,7 @@ JupiterServer_autogen/timestamp: \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QSharedDataPointer \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QSharedPointer \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QString \
+	C:/Qt/6.7.2/mingw_64/include/QtCore/QStringList \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QTimer \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QUrl \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/QVariant \
@@ -66,6 +69,7 @@ JupiterServer_autogen/timestamp: \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/qiodevicebase.h \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/qiterable.h \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/qiterator.h \
+	C:/Qt/6.7.2/mingw_64/include/QtCore/qjsonarray.h \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/qjsonobject.h \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/qjsonvalue.h \
 	C:/Qt/6.7.2/mingw_64/include/QtCore/qlatin1stringview.h \

@@ -2,10 +2,12 @@ D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/
   D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/jupiter_server_tests_autogen/moc_predefs.h \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QAbstractItemModel \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QByteArray \
+  C:/Qt/6.7.2/mingw_64/include/QtCore/QDateTime \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QDeadlineTimer \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QFlags \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QHash \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QIODevice \
+  C:/Qt/6.7.2/mingw_64/include/QtCore/QJsonArray \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QJsonObject \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QList \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QMap \
@@ -656,4 +658,5 @@ D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/
   C:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/wctype.h \
   D:/programowanie/Qt/SAN/JupiterServer/src/database/DatabaseManager.h \
   D:/programowanie/Qt/SAN/JupiterServer/src/server/ClientSession.h \
+  D:/programowanie/Qt/SAN/JupiterServer/src/server/Protocol.h \
   D:/programowanie/Qt/SAN/JupiterServer/tests/TestSocket.h

@@ -13,6 +13,7 @@
 #include <QTimer>
 #include <QJsonObject>
 #include <QHash>
+#include "database/DatabaseManager.h"
 
 class DatabaseManager;
 
@@ -67,6 +68,7 @@ private:
     int missedPings;
     QHash<QString, QJsonObject> unconfirmedMessages;
     QByteArray buffer;
+    QVector<ChatMessage> messages;
 };
 
 #endif // CLIENTSESSION_H

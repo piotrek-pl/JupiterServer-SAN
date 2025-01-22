@@ -107,7 +107,11 @@ const QString GET_CHAT_HISTORY =
     "SELECT c.id, u.username, c.message, c.sent_at, c.read_at "
     "FROM %1 c "  // %1 będzie nazwą tabeli chat_X_Y
     "INNER JOIN users u ON c.sender_id = u.id "
-    "ORDER BY c.sent_at DESC LIMIT ?";
+    "ORDER BY c.sent_at DESC "
+    "LIMIT ? OFFSET ?";
+
+const QString GET_MESSAGES_COUNT =
+    "SELECT COUNT(*) FROM %1";  // %1 będzie nazwą tabeli chat_X_Y
 
 const QString MARK_CHAT_READ =
     "UPDATE %1 "  // %1 będzie nazwą tabeli chat_X_Y

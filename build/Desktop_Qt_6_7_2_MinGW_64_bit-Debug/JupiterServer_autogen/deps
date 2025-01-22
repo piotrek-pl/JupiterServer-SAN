@@ -551,6 +551,7 @@ JupiterServer_autogen/timestamp: \
 	D:/programowanie/Qt/SAN/JupiterServer/src/models/User.h \
 	D:/programowanie/Qt/SAN/JupiterServer/src/network/NotificationManager.cpp \
 	D:/programowanie/Qt/SAN/JupiterServer/src/network/NotificationManager.h \
+	D:/programowanie/Qt/SAN/JupiterServer/src/server/ActiveSessions.h \
 	D:/programowanie/Qt/SAN/JupiterServer/src/server/ClientSession.cpp \
 	D:/programowanie/Qt/SAN/JupiterServer/src/server/ClientSession.h \
 	D:/programowanie/Qt/SAN/JupiterServer/src/server/Protocol.cpp \

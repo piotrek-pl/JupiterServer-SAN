@@ -47,6 +47,8 @@ private:
     void handleSendMessage(const QJsonObject& json);
     void processBuffer();
 
+    void setUserId(quint32 id);
+
     // Helper methods
     QJsonObject prepareFriendsListResponse();
     QJsonObject prepareStatusResponse();

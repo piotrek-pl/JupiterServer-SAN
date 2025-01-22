@@ -8,6 +8,7 @@
 #include "ClientSession.h"
 #include "database/DatabaseManager.h"
 #include "Protocol.h"
+#include "ActiveSessions.h"
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -66,6 +67,10 @@ ClientSession::ClientSession(QTcpSocket* socket, DatabaseManager* dbManager, QOb
 
 ClientSession::~ClientSession()
 {
+    if (userId > 0) {
+        ActiveSessions::getInstance().removeSession(userId);
+    }
+
     qDebug() << "ClientSession destructor called";
 
     if (QSqlDatabase::contains(sessionConnectionName)) {
@@ -264,6 +269,7 @@ void ClientSession::handleLogin(const QJsonObject& json)
     }
 
     if (dbManager->authenticateUser(username, password, userId)) {
+        setUserId(userId);  // Dodaj tę linię
         state = Protocol::SessionState::AUTHENTICATED;
         isAuthenticated = true;
         statusUpdateTimer.start();
@@ -353,10 +359,25 @@ void ClientSession::handleSendMessage(const QJsonObject& json)
         return;
     }
 
+    // Próba zapisania wiadomości
     if (dbManager->storeMessage(userId, receiverId, content)) {
+        // Wyślij potwierdzenie do nadawcy
         QJsonObject response = Protocol::MessageStructure::createMessageAck(messageId);
         sendResponse(QJsonDocument(response).toJson());
-        qDebug() << "Message" << messageId << "stored successfully";
+
+        // Wyślij wiadomość do odbiorcy jeśli jest online
+        ClientSession* receiverSession = ActiveSessions::getInstance().getSession(receiverId);
+        if (receiverSession) {
+            QJsonObject newMessage{
+                {"type", Protocol::MessageType::NEW_MESSAGES},
+                {"from", static_cast<int>(userId)},
+                {"content", content},
+                {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+            };
+            receiverSession->sendResponse(QJsonDocument(newMessage).toJson());
+        }
+
+        qDebug() << "Message" << messageId << "stored and sent successfully";
     } else {
         sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Failed to store message")).toJson());
         qWarning() << "Failed to store message" << messageId;
@@ -538,4 +559,9 @@ void ClientSession::processBuffer()
             }
         }
     } while (foundJson);
+}
+
+void ClientSession::setUserId(quint32 id) {
+    userId = id;
+    ActiveSessions::getInstance().addSession(userId, this);
 }

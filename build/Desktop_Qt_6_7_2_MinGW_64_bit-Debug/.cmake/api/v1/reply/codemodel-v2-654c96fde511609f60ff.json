@@ -1,0 +1,105 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "JupiterServer",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "JupiterServer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-JupiterServer-Debug-a4711e63c54b24742731.json",
+					"name" : "JupiterServer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "JupiterServer_autogen::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-JupiterServer_autogen-Debug-c9debebedff5490673de.json",
+					"name" : "JupiterServer_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "JupiterServer_autogen_timestamp_deps::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-JupiterServer_autogen_timestamp_deps-Debug-05077dfbe489ea959b21.json",
+					"name" : "JupiterServer_autogen_timestamp_deps",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "jupiter_server_tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-jupiter_server_tests-Debug-502183989dd49ce92a41.json",
+					"name" : "jupiter_server_tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "jupiter_server_tests_autogen::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-jupiter_server_tests_autogen-Debug-24a8aed18ad443fe112c.json",
+					"name" : "jupiter_server_tests_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "jupiter_server_tests_autogen_timestamp_deps::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-jupiter_server_tests_autogen_timestamp_deps-Debug-f9f13bedc45da3a53a38.json",
+					"name" : "jupiter_server_tests_autogen_timestamp_deps",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug",
+		"source" : "D:/programowanie/Qt/SAN/JupiterServer"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}

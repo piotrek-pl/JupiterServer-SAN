@@ -233,6 +233,12 @@
 			null
 		],
 		[
+			"D:/programowanie/Qt/SAN/JupiterServer/src/server/ActiveSessions.h",
+			"MU",
+			"3XOYHQ47YQ/moc_ActiveSessions.cpp",
+			null
+		],
+		[
 			"D:/programowanie/Qt/SAN/JupiterServer/src/server/ClientSession.h",
 			"MU",
 			"3XOYHQ47YQ/moc_ClientSession.cpp",

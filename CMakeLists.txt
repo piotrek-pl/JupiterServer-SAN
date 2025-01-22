@@ -87,6 +87,8 @@ configure_file(
 add_executable(${PROJECT_NAME}
     ${PROJECT_SOURCES}
     ${PROJECT_HEADERS}
+    src/server/ActiveSessions.h
+
 )
 
 # Dodajemy ścieżki include

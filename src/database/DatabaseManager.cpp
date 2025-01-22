@@ -57,12 +57,22 @@ bool DatabaseManager::init()
     // Wczytaj konfigurację
     QSettings settings(configFilePath, QSettings::IniFormat);
 
-    // Zapisz konfigurację w statycznej instancji
-    DatabaseConfig::instance.hostname = settings.value("Database/hostname", "localhost").toString();
-    DatabaseConfig::instance.database = settings.value("Database/database", "jupiter_db").toString();
-    DatabaseConfig::instance.username = settings.value("Database/username", "root").toString();
-    DatabaseConfig::instance.password = settings.value("Database/password", "").toString();
-    DatabaseConfig::instance.port = settings.value("Database/port", 3306).toInt();
+    // Zapisz konfigurację w statycznej instancji bez wartości domyślnych
+    DatabaseConfig::instance.hostname = settings.value("Database/hostname").toString();
+    DatabaseConfig::instance.database = settings.value("Database/database").toString();
+    DatabaseConfig::instance.username = settings.value("Database/username").toString();
+    DatabaseConfig::instance.password = settings.value("Database/password").toString();
+    DatabaseConfig::instance.port = settings.value("Database/port").toInt();
+
+    // Sprawdź czy wszystkie wymagane wartości są ustawione
+    if (DatabaseConfig::instance.hostname.isEmpty() ||
+        DatabaseConfig::instance.database.isEmpty() ||
+        DatabaseConfig::instance.username.isEmpty() ||
+        DatabaseConfig::instance.port == 0) {
+        qCritical() << "Brakujące wartości w pliku konfiguracyjnym!";
+        qCritical() << "Wymagane pola: hostname, database, username, port";
+        return false;
+    }
 
     // Utwórz główne połączenie
     database = QSqlDatabase::addDatabase("QMYSQL", "MainConnection");
@@ -82,7 +92,7 @@ bool DatabaseManager::init()
     }
 
     initialized = true;
-    mainInitialized = true;  // Ustaw flagę statyczną
+    mainInitialized = true;
     qDebug() << "Baza danych została pomyślnie zainicjalizowana";
     return true;
 }

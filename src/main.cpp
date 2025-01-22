@@ -50,6 +50,12 @@ void fillTestData(DatabaseManager* db) {
         if (!query.exec("DROP TABLE IF EXISTS user_1_friends")) {
             qDebug() << "Drop friends table error:" << query.lastError().text();
         }
+        if (!query.exec("DROP TABLE IF EXISTS user_2_friends")) {
+            qDebug() << "Drop friends table error:" << query.lastError().text();
+        }
+        if (!query.exec("DROP TABLE IF EXISTS user_3_friends")) {
+            qDebug() << "Drop friends table error:" << query.lastError().text();
+        }
         if (!query.exec("DELETE FROM user_sessions")) {
             qDebug() << "Clean sessions error:" << query.lastError().text();
         }
@@ -102,22 +108,49 @@ void fillTestData(DatabaseManager* db) {
             throw std::runtime_error("Failed to add test3: " + query.lastError().text().toStdString());
         }
 
-        // Dodawanie relacji znajomych - używamy publicznej metody addFriend
-        qDebug() << "Adding friends...";
+        // Dodawanie relacji znajomych dla wszystkich użytkowników testowych
+        qDebug() << "Adding friends relationships...";
+
+        // Znajomi dla test1 (ID: 1)
         if (!db->addFriend(1, 2) || !db->addFriend(1, 3)) {
             throw std::runtime_error("Failed to add friends for test1");
         }
 
+        // Znajomi dla test2 (ID: 2)
+        if (!db->addFriend(2, 1) || !db->addFriend(2, 3)) {
+            throw std::runtime_error("Failed to add friends for test2");
+        }
+
+        // Znajomi dla test3 (ID: 3)
+        if (!db->addFriend(3, 1) || !db->addFriend(3, 2)) {
+            throw std::runtime_error("Failed to add friends for test3");
+        }
+
         // Dodawanie testowych wiadomości
         qDebug() << "Adding test messages...";
+
+        // Wiadomości między test1 i test2
         if (!db->storeMessage(1, 2, "Cześć test2! Co słychać?")) {
             throw std::runtime_error("Failed to add message 1");
         }
         if (!db->storeMessage(2, 1, "Hej test1! Wszystko w porządku, dzięki!")) {
             throw std::runtime_error("Failed to add message 2");
         }
+
+        // Wiadomości między test1 i test3
         if (!db->storeMessage(1, 3, "Hej test3! Jesteś tam?")) {
             throw std::runtime_error("Failed to add message 3");
+        }
+        if (!db->storeMessage(3, 1, "Cześć test1! Tak, jestem!")) {
+            throw std::runtime_error("Failed to add message 4");
+        }
+
+        // Wiadomości między test2 i test3
+        if (!db->storeMessage(2, 3, "Hej test3, jak się masz?")) {
+            throw std::runtime_error("Failed to add message 5");
+        }
+        if (!db->storeMessage(3, 2, "Cześć test2! Wszystko dobrze!")) {
+            throw std::runtime_error("Failed to add message 6");
         }
 
         qDebug() << "Test data filled successfully";

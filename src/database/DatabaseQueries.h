@@ -133,6 +133,15 @@ const QString GET_UNREAD_COUNT =
 const QString CHECK_CHAT_TABLE_EXISTS =
     "SELECT COUNT(*) FROM information_schema.tables "
     "WHERE table_schema = DATABASE() AND table_name = ?";
+
+const QString GET_NEW_MESSAGES =
+    "SELECT m.id, u.username, m.message, m.sent_at, m.read_at, "
+    "m.sender_id, m.receiver_id "
+    "FROM messages m "
+    "INNER JOIN users u ON m.sender_id = u.id "
+    "WHERE (m.sender_id = :userId OR m.receiver_id = :userId) "
+    "AND m.id > :lastId "
+    "ORDER BY m.sent_at ASC, m.id ASC";
 }
 
 // Zapytania związane ze znajomymi

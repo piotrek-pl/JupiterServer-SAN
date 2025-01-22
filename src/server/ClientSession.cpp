@@ -25,6 +25,7 @@ ClientSession::ClientSession(QTcpSocket* socket, DatabaseManager* dbManager, QOb
     , state(Protocol::SessionState::INITIAL)
     , lastPingTime(QDateTime::currentMSecsSinceEpoch())
     , missedPings(0)
+    , lastSentMessageId(0)
 {
     qDebug() << "ClientSession constructor called";
 
@@ -487,11 +488,22 @@ void ClientSession::sendFriendsStatusUpdate()
 
 void ClientSession::sendPendingMessages()
 {
-    if (isAuthenticated) {
-        QJsonObject response = prepareMessagesResponse();
-        if (!response["messages"].toArray().isEmpty()) {
-            sendResponse(QJsonDocument(response).toJson());
+    if (!isAuthenticated || userId == 0) return;
+
+    auto newMessages = dbManager->getNewMessages(userId, lastSentMessageId);
+
+    if (!newMessages.isEmpty()) {
+        QJsonObject response;
+        response["type"] = Protocol::MessageType::NEW_MESSAGES;
+
+        QJsonArray messagesArray;
+        for (const auto& msg : newMessages) {
+            messagesArray.append(msg);
+            lastSentMessageId = qMax(lastSentMessageId, msg["id"].toString().toLongLong());
         }
+
+        response["messages"] = messagesArray;
+        sendResponse(QJsonDocument(response).toJson(QJsonDocument::Compact));
     }
 }
 

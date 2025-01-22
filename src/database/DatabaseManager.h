@@ -66,6 +66,7 @@ public:
     QVector<QPair<quint32, QString>> getFriendsList(quint32 userId);
     QVector<ChatMessage> getLatestMessages(quint32 userId1, quint32 userId2,
                                            int limit = Protocol::ChatHistory::MESSAGE_BATCH_SIZE);
+    QVector<QJsonObject> getNewMessages(quint32 userId, qint64 lastMessageId);
 
 private:
     // Metody pomocnicze dla użytkowników

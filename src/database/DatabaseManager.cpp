@@ -790,3 +790,37 @@ QVector<ChatMessage> DatabaseManager::getLatestMessages(quint32 userId1, quint32
 
     return history;
 }
+
+QVector<QJsonObject> DatabaseManager::getNewMessages(quint32 userId, qint64 lastMessageId)
+{
+    QVector<QJsonObject> messages;
+
+    if (!database.isOpen()) {
+        qWarning() << "Database is not open!";
+        return messages;
+    }
+
+    QSqlQuery query(database);
+    query.prepare(DatabaseQueries::Messages::GET_NEW_MESSAGES);
+    query.bindValue(":userId", userId);
+    query.bindValue(":lastId", lastMessageId);
+
+    if (!query.exec()) {
+        qWarning() << "Failed to get new messages:" << query.lastError().text();
+        return messages;
+    }
+
+    while (query.next()) {
+        QJsonObject msg;
+        msg["id"] = QString::number(query.value("id").toLongLong());
+        msg["sender"] = query.value("username").toString();
+        msg["content"] = query.value("message").toString();
+        msg["timestamp"] = query.value("sent_at").toDateTime().toString(Qt::ISODate);
+        msg["isRead"] = !query.value("read_at").isNull();
+        msg["sender_id"] = QString::number(query.value("sender_id").toUInt());
+        msg["receiver_id"] = QString::number(query.value("receiver_id").toUInt());
+        messages.append(msg);
+    }
+
+    return messages;
+}

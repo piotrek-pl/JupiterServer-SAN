@@ -65,6 +65,7 @@ private:
     QTimer messagesCheckTimer;
     QTimer pingTimer;
     qint64 lastPingTime;
+    qint64 lastSentMessageId = 0;
     int missedPings;
     QHash<QString, QJsonObject> unconfirmedMessages;
     QByteArray buffer;

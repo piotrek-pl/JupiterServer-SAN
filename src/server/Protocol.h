@@ -55,6 +55,7 @@ const QString GET_MORE_HISTORY = "get_more_history";
 const QString MORE_HISTORY_RESPONSE = "more_history_response";
 const QString GET_LATEST_MESSAGES = "get_latest_messages";
 const QString LATEST_MESSAGES_RESPONSE = "latest_messages_response";
+const QString NEW_MESSAGES = "new_messages";
 }
 
 // Status użytkownika

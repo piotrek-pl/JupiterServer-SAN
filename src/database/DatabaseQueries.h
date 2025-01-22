@@ -107,7 +107,7 @@ const QString GET_CHAT_HISTORY =
     "SELECT c.id, u.username, c.message, c.sent_at, c.read_at "
     "FROM %1 c "  // %1 będzie nazwą tabeli chat_X_Y
     "INNER JOIN users u ON c.sender_id = u.id "
-    "ORDER BY c.sent_at DESC "
+    "ORDER BY c.sent_at DESC, c.id DESC "  // Dodano sortowanie po ID
     "LIMIT ? OFFSET ?";
 
 const QString GET_LATEST_MESSAGES =

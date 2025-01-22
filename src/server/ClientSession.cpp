@@ -368,12 +368,12 @@ void ClientSession::handleSendMessage(const QJsonObject& json)
         // Wyślij wiadomość do odbiorcy jeśli jest online
         ClientSession* receiverSession = ActiveSessions::getInstance().getSession(receiverId);
         if (receiverSession) {
-            QJsonObject newMessage{
-                {"type", Protocol::MessageType::NEW_MESSAGES},
-                {"from", static_cast<int>(userId)},
-                {"content", content},
-                {"timestamp", QDateTime::currentMSecsSinceEpoch()}
-            };
+            // Użyj protokołu do utworzenia wiadomości - używamy createNewMessage zamiast createNewMessageResponse
+            QJsonObject newMessage = Protocol::MessageStructure::createNewMessage(
+                content,
+                static_cast<int>(userId),
+                QDateTime::currentMSecsSinceEpoch()
+                );
             receiverSession->sendResponse(QJsonDocument(newMessage).toJson());
         }
 

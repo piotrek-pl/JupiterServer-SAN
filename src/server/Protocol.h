@@ -100,7 +100,8 @@ const QStringList AUTHENTICATED = {
     MessageType::SEND_MESSAGE,
     MessageType::MESSAGE_ACK,
     MessageType::GET_CHAT_HISTORY,
-    MessageType::GET_MORE_HISTORY
+    MessageType::GET_MORE_HISTORY,
+    MessageType::NEW_MESSAGES
 };
 
 const QStringList DISCONNECTING = {
@@ -132,6 +133,8 @@ QJsonObject createError(const QString& message);
 // Lista znajomych
 QJsonObject createGetFriendsList();
 QJsonObject createFriendsStatusUpdate(const QJsonArray& friends);
+
+QJsonObject createNewMessage(const QString& content, int from, qint64 timestamp);
 
 } // namespace MessageStructure
 

@@ -19,6 +19,15 @@ QJsonObject createLoginRequest(const QString& username, const QString& password)
     };
 }
 
+QJsonObject createNewMessage(const QString& content, int from, qint64 timestamp) {
+    QJsonObject message;
+    message["type"] = MessageType::NEW_MESSAGES;
+    message["content"] = content;
+    message["from"] = from;
+    message["timestamp"] = timestamp;
+    return message;
+}
+
 QJsonObject createRegisterRequest(const QString& username, const QString& password, const QString& email) {
     return QJsonObject{
         {"type", MessageType::REGISTER},

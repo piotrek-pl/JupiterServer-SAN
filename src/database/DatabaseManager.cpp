@@ -101,10 +101,6 @@ bool DatabaseManager::createTablesIfNotExist()
             throw std::runtime_error("Failed to create users table: " + query.lastError().text().toStdString());
         }
 
-        if (!query.exec(DatabaseQueries::Create::MESSAGES_TABLE)) {
-            throw std::runtime_error("Failed to create messages table: " + query.lastError().text().toStdString());
-        }
-
         if (!query.exec(DatabaseQueries::Create::SESSIONS_TABLE)) {
             throw std::runtime_error("Failed to create sessions table: " + query.lastError().text().toStdString());
         }
@@ -328,20 +324,20 @@ bool DatabaseManager::updateUserStatus(quint32 userId, const QString& status)
 
 bool DatabaseManager::storeMessage(quint32 senderId, quint32 receiverId, const QString& message)
 {
+    if (!createChatTableIfNotExists(senderId, receiverId)) {
+        return false;
+    }
+
     if (!database.transaction()) {
         qWarning() << "Failed to start transaction for storing message";
         return false;
     }
 
     try {
-        if (!userExists(senderId) || !userExists(receiverId)) {
-            throw std::runtime_error("Invalid sender or receiver ID");
-        }
-
+        QString tableName = getChatTableName(senderId, receiverId);
         QSqlQuery query(database);
-        query.prepare(DatabaseQueries::Messages::STORE);
+        query.prepare(DatabaseQueries::Messages::STORE_IN_CHAT.arg(tableName));
         query.addBindValue(senderId);
-        query.addBindValue(receiverId);
         query.addBindValue(message);
 
         if (!query.exec()) {
@@ -443,9 +439,14 @@ QVector<QPair<quint32, QString>> DatabaseManager::getFriendsList(quint32 userId)
     }
 }
 
-QVector<QPair<QString, QString>> DatabaseManager::getChatHistory(quint32 userId, quint32 friendId, int limit)
+QVector<QPair<QString, QString>> DatabaseManager::getChatHistory(quint32 userId1, quint32 userId2, int limit)
 {
     QVector<QPair<QString, QString>> messages;
+    QString tableName = getChatTableName(userId1, userId2);
+
+    if (!chatTableExists(tableName)) {
+        return messages;
+    }
 
     if (!database.transaction()) {
         qWarning() << "Failed to start transaction for chat history";
@@ -454,11 +455,7 @@ QVector<QPair<QString, QString>> DatabaseManager::getChatHistory(quint32 userId,
 
     try {
         QSqlQuery query(database);
-        query.prepare(DatabaseQueries::Messages::GET_HISTORY);
-        query.addBindValue(userId);
-        query.addBindValue(friendId);
-        query.addBindValue(friendId);
-        query.addBindValue(userId);
+        query.prepare(DatabaseQueries::Messages::GET_CHAT_HISTORY.arg(tableName));
         query.addBindValue(limit);
 
         if (!query.exec()) {
@@ -466,8 +463,8 @@ QVector<QPair<QString, QString>> DatabaseManager::getChatHistory(quint32 userId,
         }
 
         while (query.next()) {
-            QString sender = query.value(0).toString();
-            QString message = query.value(1).toString();
+            QString sender = query.value(1).toString();
+            QString message = query.value(2).toString();
             messages.append({sender, message});
         }
 
@@ -615,4 +612,113 @@ bool DatabaseManager::cloneConnectionForThread(const QString& connectionName)
     initialized = true;
 
     return true;
+}
+
+// Metoda pomocnicza do generowania nazwy tabeli chatu
+QString DatabaseManager::getChatTableName(quint32 userId1, quint32 userId2)
+{
+    // Zawsze używamy mniejszego ID jako pierwsze
+    quint32 smallerId = qMin(userId1, userId2);
+    quint32 largerId = qMax(userId1, userId2);
+    return QString(DatabaseQueries::Tables::CHAT_PREFIX).arg(smallerId).arg(largerId);
+}
+
+// Sprawdzenie czy tabela chatu istnieje
+bool DatabaseManager::chatTableExists(const QString& tableName)
+{
+    QSqlQuery query(database);
+    query.prepare(DatabaseQueries::Messages::CHECK_CHAT_TABLE_EXISTS);
+    query.addBindValue(tableName);
+
+    if (!query.exec() || !query.next()) {
+        qWarning() << "Failed to check if chat table exists:" << query.lastError().text();
+        return false;
+    }
+
+    return query.value(0).toInt() > 0;
+}
+
+// Tworzenie indeksów dla tabeli chatu
+void DatabaseManager::createChatIndexes(const QString& tableName)
+{
+    QSqlQuery query(database);
+    QString indexQuery = DatabaseQueries::Create::CHAT_INDEXES.arg(tableName);
+
+    if (!query.exec(indexQuery)) {
+        qWarning() << "Failed to create indexes for chat table:" << query.lastError().text();
+    }
+}
+
+// Tworzenie nowej tabeli chatu jeśli nie istnieje
+bool DatabaseManager::createChatTableIfNotExists(quint32 userId1, quint32 userId2)
+{
+    QString tableName = getChatTableName(userId1, userId2);
+
+    if (chatTableExists(tableName)) {
+        return true;
+    }
+
+    if (!database.transaction()) {
+        qWarning() << "Failed to start transaction for creating chat table";
+        return false;
+    }
+
+    try {
+        QSqlQuery query(database);
+        QString createQuery = DatabaseQueries::Create::CHAT_TABLE.arg(tableName);
+
+        if (!query.exec(createQuery)) {
+            throw std::runtime_error("Failed to create chat table: " + query.lastError().text().toStdString());
+        }
+
+        createChatIndexes(tableName);
+
+        if (!database.commit()) {
+            throw std::runtime_error("Failed to commit chat table creation");
+        }
+
+        qInfo() << "Created new chat table:" << tableName;
+        return true;
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error creating chat table:" << e.what();
+        database.rollback();
+        return false;
+    }
+}
+
+// Oznaczanie wiadomości jako przeczytanych
+bool DatabaseManager::markChatAsRead(quint32 userId, quint32 friendId)
+{
+    QString tableName = getChatTableName(userId, friendId);
+
+    if (!chatTableExists(tableName)) {
+        return true; // Brak tabeli oznacza brak nieprzeczytanych wiadomości
+    }
+
+    if (!database.transaction()) {
+        qWarning() << "Failed to start transaction for marking messages as read";
+        return false;
+    }
+
+    try {
+        QSqlQuery query(database);
+        query.prepare(DatabaseQueries::Messages::MARK_CHAT_READ.arg(tableName));
+        query.addBindValue(userId);
+
+        if (!query.exec()) {
+            throw std::runtime_error("Failed to mark messages as read: " + query.lastError().text().toStdString());
+        }
+
+        if (!database.commit()) {
+            throw std::runtime_error("Failed to commit marking messages as read");
+        }
+
+        return true;
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error marking messages as read:" << e.what();
+        database.rollback();
+        return false;
+    }
 }

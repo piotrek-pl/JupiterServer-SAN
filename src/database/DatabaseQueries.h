@@ -8,9 +8,9 @@ namespace DatabaseQueries {
 // Nazwy tabel
 namespace Tables {
 const QString USERS = "users";
-const QString MESSAGES = "messages_history";
 const QString SESSIONS = "user_sessions";
 const QString FRIENDS_PREFIX = "user_%1_friends"; // %1 będzie zastąpione przez user_id
+const QString CHAT_PREFIX = "chat_%1_%2"; // %1, %2 będą ID użytkowników (mniejsze_ID_większe_ID)
 }
 
 // Zapytania do tworzenia tabel
@@ -25,21 +25,6 @@ const QString USERS_TABLE =
     "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
     "last_login TIMESTAMP NULL, "
     "salt VARCHAR(32) NOT NULL"
-    ") ENGINE=InnoDB;";
-
-const QString MESSAGES_TABLE =
-    "CREATE TABLE IF NOT EXISTS messages_history ("
-    "id INT AUTO_INCREMENT PRIMARY KEY, "
-    "sender_id INT NOT NULL, "
-    "receiver_id INT NOT NULL, "
-    "message TEXT NOT NULL, "
-    "sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
-    "read_at TIMESTAMP NULL, "
-    "deleted_at TIMESTAMP NULL, "
-    "deleted_by INT, "
-    "FOREIGN KEY (sender_id) REFERENCES users(id), "
-    "FOREIGN KEY (receiver_id) REFERENCES users(id), "
-    "FOREIGN KEY (deleted_by) REFERENCES users(id)"
     ") ENGINE=InnoDB;";
 
 const QString SESSIONS_TABLE =
@@ -58,6 +43,20 @@ const QString FRIENDS_TABLE =
     "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
     "FOREIGN KEY (friend_id) REFERENCES users(id)"
     ") ENGINE=InnoDB;";
+
+const QString CHAT_TABLE =
+    "CREATE TABLE IF NOT EXISTS %1 ("  // %1 będzie nazwą tabeli w formacie chat_X_Y
+    "id INT AUTO_INCREMENT PRIMARY KEY, "
+    "sender_id INT NOT NULL, "
+    "message TEXT NOT NULL, "
+    "sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+    "read_at TIMESTAMP NULL, "
+    "FOREIGN KEY (sender_id) REFERENCES users(id)"
+    ") ENGINE=InnoDB;";
+
+const QString CHAT_INDEXES =
+    "CREATE INDEX IF NOT EXISTS idx_%1_timestamp ON %1(sent_at);"
+    "CREATE INDEX IF NOT EXISTS idx_%1_unread ON %1(read_at) WHERE read_at IS NULL;";
 }
 
 // Zapytania związane z użytkownikami
@@ -96,39 +95,32 @@ const QString GET_USER_INFO =
 const QString UPDATE_LAST_LOGIN =
     "UPDATE users SET last_login = CURRENT_TIMESTAMP "
     "WHERE id = ?";
-
 }
 
 // Zapytania związane z wiadomościami
 namespace Messages {
-const QString STORE =
-    "INSERT INTO messages_history (sender_id, receiver_id, message) "
-    "VALUES (?, ?, ?)";
+const QString STORE_IN_CHAT =
+    "INSERT INTO %1 (sender_id, message) "  // %1 będzie nazwą tabeli chat_X_Y
+    "VALUES (?, ?)";
 
-const QString GET_HISTORY =
-    "SELECT m.id, u.username, m.message, m.sent_at, m.read_at "
-    "FROM messages_history m "
-    "INNER JOIN users u ON m.sender_id = u.id "
-    "WHERE ((m.sender_id = ? AND m.receiver_id = ?) "
-    "    OR (m.sender_id = ? AND m.receiver_id = ?)) "
-    "    AND m.deleted_at IS NULL "
-    "ORDER BY m.sent_at DESC LIMIT ?";
+const QString GET_CHAT_HISTORY =
+    "SELECT c.id, u.username, c.message, c.sent_at, c.read_at "
+    "FROM %1 c "  // %1 będzie nazwą tabeli chat_X_Y
+    "INNER JOIN users u ON c.sender_id = u.id "
+    "ORDER BY c.sent_at DESC LIMIT ?";
 
-const QString MARK_READ =
-    "UPDATE messages_history "
+const QString MARK_CHAT_READ =
+    "UPDATE %1 "  // %1 będzie nazwą tabeli chat_X_Y
     "SET read_at = CURRENT_TIMESTAMP "
-    "WHERE id = ? AND (sender_id = ? OR receiver_id = ?) "
-    "AND read_at IS NULL";
-
-const QString DELETE =
-    "UPDATE messages_history "
-    "SET deleted_at = CURRENT_TIMESTAMP, deleted_by = ? "
-    "WHERE id = ? AND (sender_id = ? OR receiver_id = ?)";
+    "WHERE sender_id != ? AND read_at IS NULL";
 
 const QString GET_UNREAD_COUNT =
-    "SELECT COUNT(*) FROM messages_history "
-    "WHERE receiver_id = ? AND read_at IS NULL "
-    "AND deleted_at IS NULL";
+    "SELECT COUNT(*) FROM %1 "  // %1 będzie nazwą tabeli chat_X_Y
+    "WHERE sender_id != ? AND read_at IS NULL";
+
+const QString CHECK_CHAT_TABLE_EXISTS =
+    "SELECT COUNT(*) FROM information_schema.tables "
+    "WHERE table_schema = DATABASE() AND table_name = ?";
 }
 
 // Zapytania związane ze znajomymi
@@ -160,8 +152,8 @@ const QString GET_ONLINE =
 namespace Sessions {
 const QString CREATE =
     "INSERT INTO user_sessions "
-    "(user_id, session_token, ip_address, expires_at) "
-    "VALUES (?, ?, ?, ?)";
+    "(user_id, session_token, expires_at) "
+    "VALUES (?, ?, ?)";
 
 const QString UPDATE =
     "UPDATE user_sessions "

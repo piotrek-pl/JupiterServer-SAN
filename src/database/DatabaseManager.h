@@ -33,9 +33,9 @@ public:
     bool isInitialized() const { return initialized; }
     bool cloneConnectionForThread(const QString& connectionName);
 
-    #ifdef QT_DEBUG
+#ifdef QT_DEBUG
     bool reinitializeTables() { return createTablesIfNotExist(); }
-    #endif
+#endif
 
     // Operacje na użytkownikach
     bool registerUser(const QString& username, const QString& password);
@@ -43,16 +43,17 @@ public:
     bool getUserStatus(quint32 userId, QString& status);
     bool updateUserStatus(quint32 userId, const QString& status);
 
-    // Operacje na wiadomościach
+    // Operacje na wiadomościach - nowa implementacja chatów
     bool storeMessage(quint32 senderId, quint32 receiverId, const QString& message);
-    QVector<QPair<QString, QString>> getChatHistory(quint32 userId, quint32 friendId, int limit = 50);
+    QVector<QPair<QString, QString>> getChatHistory(quint32 userId1, quint32 userId2, int limit = 50);
+    bool markChatAsRead(quint32 userId, quint32 friendId);
 
     // Operacje na znajomych
     bool addFriend(quint32 userId, quint32 friendId);
     QVector<QPair<quint32, QString>> getFriendsList(quint32 userId);
 
 private:
-    // Metody pomocnicze
+    // Metody pomocnicze dla użytkowników
     bool createTablesIfNotExist();
     bool verifyPassword(const QString& password, const QString& hash);
     bool validateUsername(const QString& username);
@@ -62,6 +63,12 @@ private:
     QString generateSalt();
     QString hashPassword(const QString& password);
     bool createFriendsList(quint32 userId);
+
+    // Nowe metody pomocnicze dla chatów
+    QString getChatTableName(quint32 userId1, quint32 userId2);
+    bool createChatTableIfNotExists(quint32 userId1, quint32 userId2);
+    bool chatTableExists(const QString& tableName);
+    void createChatIndexes(const QString& tableName);
 
     // Stałe
     static constexpr int MIN_USERNAME_LENGTH = 3;

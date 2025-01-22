@@ -34,9 +34,19 @@ void fillTestData(DatabaseManager* db) {
         qDebug() << "Cleaning old data...";
         query.exec("SET FOREIGN_KEY_CHECKS = 0");
 
-        if (!query.exec("DELETE FROM messages_history")) {
-            qDebug() << "Clean messages error:" << query.lastError().text();
+        // Usuwanie wszystkich dynamicznych tabel chatów
+        query.exec("SELECT TABLE_NAME FROM information_schema.tables "
+                   "WHERE table_schema = DATABASE() "
+                   "AND table_name LIKE 'chat_%_%'");
+        while (query.next()) {
+            QString tableName = query.value(0).toString();
+            QSqlQuery dropQuery(database);
+            if (!dropQuery.exec("DROP TABLE IF EXISTS " + tableName)) {
+                qDebug() << "Drop chat table error:" << dropQuery.lastError().text();
+            }
         }
+
+        // Usuwanie pozostałych tabel
         if (!query.exec("DROP TABLE IF EXISTS user_1_friends")) {
             qDebug() << "Drop friends table error:" << query.lastError().text();
         }
@@ -55,7 +65,7 @@ void fillTestData(DatabaseManager* db) {
             qDebug() << "Reset auto_increment error:" << query.lastError().text();
         }
 
-        // Dodawanie użytkowników
+        // Dodawanie użytkowników testowych
         qDebug() << "Adding test users...";
         const QString salt = "testSalt123";
 
@@ -92,57 +102,26 @@ void fillTestData(DatabaseManager* db) {
             throw std::runtime_error("Failed to add test3: " + query.lastError().text().toStdString());
         }
 
-        // Tworzenie i wypełnianie tabeli znajomych
-        qDebug() << "Creating friends table...";
-        QString createFriendsTable =
-            "CREATE TABLE IF NOT EXISTS user_1_friends ("
-            "friend_id INT NOT NULL,"
-            "FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE"
-            ") ENGINE=InnoDB;";
-
-        if (!query.exec(createFriendsTable)) {
-            throw std::runtime_error("Failed to create friends table: " + query.lastError().text().toStdString());
-        }
-
-        // Dodawanie znajomych
+        // Dodawanie relacji znajomych - używamy publicznej metody addFriend
         qDebug() << "Adding friends...";
-        if (!query.exec("INSERT INTO user_1_friends (friend_id) VALUES (2)")) {
-            throw std::runtime_error("Failed to add friend 2: " + query.lastError().text().toStdString());
+        if (!db->addFriend(1, 2) || !db->addFriend(1, 3)) {
+            throw std::runtime_error("Failed to add friends for test1");
         }
 
-        if (!query.exec("INSERT INTO user_1_friends (friend_id) VALUES (3)")) {
-            throw std::runtime_error("Failed to add friend 3: " + query.lastError().text().toStdString());
-        }
-
-        // Dodawanie wiadomości
+        // Dodawanie testowych wiadomości
         qDebug() << "Adding test messages...";
-        query.prepare("INSERT INTO messages_history (sender_id, receiver_id, message) VALUES (?, ?, ?)");
-
-        // Wiadomość 1
-        query.bindValue(0, 1);
-        query.bindValue(1, 2);
-        query.bindValue(2, "Cześć, to wiadomość testowa 1");
-
-        if (!query.exec()) {
-            throw std::runtime_error("Failed to add message 1: " + query.lastError().text().toStdString());
+        if (!db->storeMessage(1, 2, "Cześć test2! Co słychać?")) {
+            throw std::runtime_error("Failed to add message 1");
+        }
+        if (!db->storeMessage(2, 1, "Hej test1! Wszystko w porządku, dzięki!")) {
+            throw std::runtime_error("Failed to add message 2");
+        }
+        if (!db->storeMessage(1, 3, "Hej test3! Jesteś tam?")) {
+            throw std::runtime_error("Failed to add message 3");
         }
 
-        // Wiadomość 2
-        query.bindValue(0, 2);
-        query.bindValue(1, 1);
-        query.bindValue(2, "Hej, to odpowiedź testowa");
-
-        if (!query.exec()) {
-            throw std::runtime_error("Failed to add message 2: " + query.lastError().text().toStdString());
-        }
-
-        if (!database.commit()) {
-            throw std::runtime_error("Failed to commit test data");
-        }
-
-        qInfo() << "Test data added successfully";
-        qInfo() << "Created test users: test1, test2 (online) and test3 (offline)";
-        qInfo() << "Added test messages between test1 and test2";
+        qDebug() << "Test data filled successfully";
+        return;
     }
     catch (const std::exception& e) {
         qWarning() << "Error filling test data:" << e.what();

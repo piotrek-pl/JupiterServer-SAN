@@ -791,36 +791,30 @@ QVector<ChatMessage> DatabaseManager::getLatestMessages(quint32 userId1, quint32
     return history;
 }
 
-/*QVector<QJsonObject> DatabaseManager::getNewMessages(quint32 userId, qint64 lastMessageId)
+QVector<quint32> DatabaseManager::getUnreadMessagesUsers(quint32 userId)
 {
-    QVector<QJsonObject> messages;
+    QVector<quint32> usersWithUnread;
+    QVector<QPair<quint32, QString>> friendsList = getFriendsList(userId);
 
-    if (!database.isOpen()) {
-        qWarning() << "Database is not open!";
-        return messages;
+    for (const auto& friend_ : friendsList) {
+        quint32 friendId = friend_.first;
+        QString tableName = getChatTableName(userId, friendId);
+
+        if (!chatTableExists(tableName)) {
+            continue;
+        }
+
+        QSqlQuery query(database);
+        query.prepare(DatabaseQueries::Messages::GET_UNREAD_COUNT.arg(tableName));
+        query.addBindValue(userId);
+
+        if (query.exec() && query.next()) {
+            int unreadCount = query.value(0).toInt();
+            if (unreadCount > 0) {
+                usersWithUnread.append(friendId);
+            }
+        }
     }
 
-    QSqlQuery query(database);
-    query.prepare(DatabaseQueries::Messages::GET_NEW_MESSAGES);
-    query.bindValue(":userId", userId);
-    query.bindValue(":lastId", lastMessageId);
-
-    if (!query.exec()) {
-        qWarning() << "Failed to get new messages:" << query.lastError().text();
-        return messages;
-    }
-
-    while (query.next()) {
-        QJsonObject msg;
-        msg["id"] = QString::number(query.value("id").toLongLong());
-        msg["sender"] = query.value("username").toString();
-        msg["content"] = query.value("message").toString();
-        msg["timestamp"] = query.value("sent_at").toDateTime().toString(Qt::ISODate);
-        msg["isRead"] = !query.value("read_at").isNull();
-        msg["sender_id"] = QString::number(query.value("sender_id").toUInt());
-        msg["receiver_id"] = QString::number(query.value("receiver_id").toUInt());
-        messages.append(msg);
-    }
-
-    return messages;
-}*/
+    return usersWithUnread;
+}

@@ -265,13 +265,14 @@ void ClientSession::handleLogin(const QJsonObject& json)
     }
 
     if (dbManager->authenticateUser(username, password, userId)) {
-        setUserId(userId);  // Dodaj tę linię
+        setUserId(userId);
         state = Protocol::SessionState::AUTHENTICATED;
         isAuthenticated = true;
         statusUpdateTimer.start();
 
         dbManager->updateUserStatus(userId, "online");
 
+        // Wysyłamy odpowiedź o udanym logowaniu
         QJsonObject response{
             {"type", Protocol::MessageType::LOGIN_RESPONSE},
             {"status", "success"},
@@ -279,6 +280,12 @@ void ClientSession::handleLogin(const QJsonObject& json)
             {"timestamp", QDateTime::currentMSecsSinceEpoch()}
         };
         sendResponse(QJsonDocument(response).toJson());
+
+        // Wysyłamy informację o nieprzeczytanych wiadomościach
+        sendUnreadFromUsers();
+
+        // Wysyłamy listę znajomych (zakładam, że jest realizowane w innym miejscu)
+        handleFriendsListRequest();
 
         qDebug() << "User" << username << "logged in successfully";
     } else {
@@ -537,4 +544,30 @@ void ClientSession::processBuffer()
 void ClientSession::setUserId(quint32 id) {
     userId = id;
     ActiveSessions::getInstance().addSession(userId, this);
+}
+
+void ClientSession::sendUnreadFromUsers()
+{
+    if (!isAuthenticated || !userId) {
+        qDebug() << "Cannot send unread users - not authenticated or no userId";
+        return;
+    }
+
+    QVector<quint32> unreadUsers = dbManager->getUnreadMessagesUsers(userId);
+    qDebug() << "Found" << unreadUsers.size() << "users with unread messages for user" << userId;
+
+    QJsonArray usersArray;
+    for (quint32 fromId : unreadUsers) {
+        QJsonObject userObj;
+        userObj["id"] = QString::number(fromId);
+        usersArray.append(userObj);
+        qDebug() << "Added user" << fromId << "to unread messages list";
+    }
+
+    QJsonObject response;
+    response["type"] = Protocol::MessageType::UNREAD_FROM;
+    response["users"] = usersArray;
+
+    qDebug() << "Sending unread_from response:" << QJsonDocument(response).toJson();
+    sendResponse(QJsonDocument(response).toJson());
 }

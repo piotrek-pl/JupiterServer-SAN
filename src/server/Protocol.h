@@ -57,6 +57,7 @@ const QString GET_LATEST_MESSAGES = "get_latest_messages";
 const QString LATEST_MESSAGES_RESPONSE = "latest_messages_response";
 const QString NEW_MESSAGES = "new_messages";
 const QString MESSAGE_READ = "message_read";
+const QString UNREAD_FROM = "unread_from";
 }
 
 // Status użytkownika

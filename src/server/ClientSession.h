@@ -45,6 +45,7 @@ private:
     void handleMessageAck(const QJsonObject& message);
     void handleSendMessage(const QJsonObject& json);
     void processBuffer();
+    void sendUnreadFromUsers();
 
     void setUserId(quint32 id);
 

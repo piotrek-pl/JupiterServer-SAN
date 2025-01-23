@@ -116,5 +116,13 @@ QJsonObject createFriendsStatusUpdate(const QJsonArray& friends) {
     };
 }
 
+QJsonObject createMessageReadResponse() {
+    return QJsonObject{
+        {"type", MessageType::MESSAGE_READ_RESPONSE},
+        {"status", "success"},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
 } // namespace MessageStructure
 } // namespace Protocol

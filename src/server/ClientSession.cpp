@@ -166,45 +166,6 @@ void ClientSession::processMessage(const QByteArray& message)
     else if (type == Protocol::MessageType::REGISTER) {
         handleRegister(json);
     }
-    else if (type == Protocol::MessageType::GET_LATEST_MESSAGES) {
-        // Nowa obsługa pobierania najnowszych wiadomości
-        quint32 friendId = json["friend_id"].toInt();
-        int limit = json["limit"].toInt(Protocol::ChatHistory::MESSAGE_BATCH_SIZE);
-
-        messages = dbManager->getLatestMessages(userId, friendId, limit);
-        bool hasMore = dbManager->hasMoreHistory(userId, friendId, 0);
-
-        QJsonObject response = prepareMessagesResponse();
-        response["type"] = Protocol::MessageType::LATEST_MESSAGES_RESPONSE;
-        response["has_more"] = hasMore;
-        response["offset"] = messages.size(); // dla następnych zapytań
-        sendResponse(QJsonDocument(response).toJson());
-    }
-    else if (type == Protocol::MessageType::GET_CHAT_HISTORY) {
-        quint32 friendId = json["friend_id"].toInt();
-        int offset = json["offset"].toInt(0);
-
-        messages = dbManager->getChatHistory(userId, friendId, offset);
-        bool hasMore = dbManager->hasMoreHistory(userId, friendId, offset);
-
-        QJsonObject response = prepareMessagesResponse();
-        response["has_more"] = hasMore;
-        response["offset"] = offset;
-        sendResponse(QJsonDocument(response).toJson());
-    }
-    else if (type == Protocol::MessageType::GET_MORE_HISTORY) {
-        quint32 friendId = json["friend_id"].toInt();
-        int offset = json["offset"].toInt(0);
-
-        messages = dbManager->getChatHistory(userId, friendId, offset);
-        bool hasMore = dbManager->hasMoreHistory(userId, friendId, offset);
-
-        QJsonObject response = prepareMessagesResponse();
-        response["type"] = Protocol::MessageType::MORE_HISTORY_RESPONSE;
-        response["has_more"] = hasMore;
-        response["offset"] = offset;
-        sendResponse(QJsonDocument(response).toJson());
-    }
     else if (type == Protocol::MessageType::GET_FRIENDS_LIST) {
         handleFriendsListRequest();
     }
@@ -232,8 +193,61 @@ void ClientSession::processMessage(const QByteArray& message)
             qWarning() << "Invalid status update request received";
         }
     }
+    else if (type == Protocol::MessageType::GET_LATEST_MESSAGES) {
+        quint32 friendId = json["friend_id"].toInt();
+        int limit = json["limit"].toInt(Protocol::ChatHistory::MESSAGE_BATCH_SIZE);
+
+        messages = dbManager->getLatestMessages(userId, friendId, limit);
+        bool hasMore = dbManager->hasMoreHistory(userId, friendId, 0);
+
+        QJsonObject response = prepareMessagesResponse();
+        response["type"] = Protocol::MessageType::LATEST_MESSAGES_RESPONSE;
+        response["has_more"] = hasMore;
+        response["offset"] = messages.size();
+        sendResponse(QJsonDocument(response).toJson());
+    }
+    else if (type == Protocol::MessageType::GET_CHAT_HISTORY) {
+        quint32 friendId = json["friend_id"].toInt();
+        int offset = json["offset"].toInt(0);
+
+        messages = dbManager->getChatHistory(userId, friendId, offset);
+        bool hasMore = dbManager->hasMoreHistory(userId, friendId, offset);
+
+        QJsonObject response = prepareMessagesResponse();
+        response["has_more"] = hasMore;
+        response["offset"] = offset;
+        sendResponse(QJsonDocument(response).toJson());
+    }
+    else if (type == Protocol::MessageType::GET_MORE_HISTORY) {
+        quint32 friendId = json["friend_id"].toInt();
+        int offset = json["offset"].toInt(0);
+
+        messages = dbManager->getChatHistory(userId, friendId, offset);
+        bool hasMore = dbManager->hasMoreHistory(userId, friendId, offset);
+
+        QJsonObject response = prepareMessagesResponse();
+        response["type"] = Protocol::MessageType::MORE_HISTORY_RESPONSE;
+        response["has_more"] = hasMore;
+        response["offset"] = offset;
+        sendResponse(QJsonDocument(response).toJson());
+    }
     else if (type == Protocol::MessageType::SEND_MESSAGE) {
         handleSendMessage(json);
+    }
+    else if (type == Protocol::MessageType::MESSAGE_READ) {
+        quint32 friendId = json["friendId"].toInt();
+        if (friendId > 0 && userId > 0) {
+            if (dbManager->markChatAsRead(userId, friendId)) {
+                sendResponse(QJsonDocument(Protocol::MessageStructure::createMessageReadResponse()).toJson());
+                qDebug() << "Messages from user" << friendId << "marked as read for user" << userId;
+            } else {
+                sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Failed to mark messages as read")).toJson());
+                qWarning() << "Failed to mark messages as read from user" << friendId << "for user" << userId;
+            }
+        } else {
+            sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Invalid message read request")).toJson());
+            qWarning() << "Invalid message read request received";
+        }
     }
     else if (type == Protocol::MessageType::LOGOUT) {
         handleLogout();

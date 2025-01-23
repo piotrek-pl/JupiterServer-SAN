@@ -53,10 +53,6 @@ ClientSession::ClientSession(QTcpSocket* socket, DatabaseManager* dbManager, QOb
     connect(&statusUpdateTimer, &QTimer::timeout,
             this, &ClientSession::sendFriendsStatusUpdate);
 
-    messagesCheckTimer.setInterval(Protocol::Timeouts::REQUEST);
-    connect(&messagesCheckTimer, &QTimer::timeout,
-            this, &ClientSession::sendPendingMessages);
-
     pingTimer.setInterval(Protocol::Timeouts::PING);
     connect(&pingTimer, &QTimer::timeout,
             this, &ClientSession::checkConnectionStatus);
@@ -273,7 +269,6 @@ void ClientSession::handleLogin(const QJsonObject& json)
         state = Protocol::SessionState::AUTHENTICATED;
         isAuthenticated = true;
         statusUpdateTimer.start();
-        messagesCheckTimer.start();
 
         dbManager->updateUserStatus(userId, "online");
 
@@ -326,7 +321,6 @@ void ClientSession::handleLogout()
         userId = 0;
 
         statusUpdateTimer.stop();
-        messagesCheckTimer.stop();
 
         QJsonObject response{
             {"type", "logout_response"},
@@ -504,27 +498,6 @@ void ClientSession::sendFriendsStatusUpdate()
         auto friendsList = prepareFriendsListResponse()["friends"].toArray();
         QJsonObject response = Protocol::MessageStructure::createFriendsStatusUpdate(friendsList);
         sendResponse(QJsonDocument(response).toJson());
-    }
-}
-
-void ClientSession::sendPendingMessages()
-{
-    if (!isAuthenticated || userId == 0) return;
-
-    auto newMessages = dbManager->getNewMessages(userId, lastSentMessageId);
-
-    if (!newMessages.isEmpty()) {
-        QJsonObject response;
-        response["type"] = Protocol::MessageType::NEW_MESSAGES;
-
-        QJsonArray messagesArray;
-        for (const auto& msg : newMessages) {
-            messagesArray.append(msg);
-            lastSentMessageId = qMax(lastSentMessageId, msg["id"].toString().toLongLong());
-        }
-
-        response["messages"] = messagesArray;
-        sendResponse(QJsonDocument(response).toJson(QJsonDocument::Compact));
     }
 }
 

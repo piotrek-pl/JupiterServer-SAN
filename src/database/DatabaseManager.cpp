@@ -791,7 +791,7 @@ QVector<ChatMessage> DatabaseManager::getLatestMessages(quint32 userId1, quint32
     return history;
 }
 
-QVector<QJsonObject> DatabaseManager::getNewMessages(quint32 userId, qint64 lastMessageId)
+/*QVector<QJsonObject> DatabaseManager::getNewMessages(quint32 userId, qint64 lastMessageId)
 {
     QVector<QJsonObject> messages;
 
@@ -823,4 +823,4 @@ QVector<QJsonObject> DatabaseManager::getNewMessages(quint32 userId, qint64 last
     }
 
     return messages;
-}
+}*/

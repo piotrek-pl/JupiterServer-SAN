@@ -28,7 +28,6 @@ private slots:
     void handleReadyRead();
     void handleError(QAbstractSocket::SocketError socketError);
     void sendFriendsStatusUpdate();
-    void sendPendingMessages();
     void checkConnectionStatus();
 
 private:

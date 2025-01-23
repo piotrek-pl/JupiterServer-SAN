@@ -42,7 +42,6 @@ constexpr auto qt_meta_stringdata_CLASSClientSessionENDCLASS = QtMocHelpers::str
     "QAbstractSocket::SocketError",
     "socketError",
     "sendFriendsStatusUpdate",
-    "sendPendingMessages",
     "checkConnectionStatus"
 );
 #else  // !QT_MOC_HAS_STRINGDATA
@@ -56,7 +55,7 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSClientSessionENDCLASS[] = {
       12,       // revision
        0,       // classname
        0,    0, // classinfo
-       5,   14, // methods
+       4,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -64,16 +63,14 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSClientSessionENDCLASS[] = {
        0,       // signalCount
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    0,   44,    2, 0x08,    1 /* Private */,
-       3,    1,   45,    2, 0x08,    2 /* Private */,
-       6,    0,   48,    2, 0x08,    4 /* Private */,
-       7,    0,   49,    2, 0x08,    5 /* Private */,
-       8,    0,   50,    2, 0x08,    6 /* Private */,
+       1,    0,   38,    2, 0x08,    1 /* Private */,
+       3,    1,   39,    2, 0x08,    2 /* Private */,
+       6,    0,   42,    2, 0x08,    4 /* Private */,
+       7,    0,   43,    2, 0x08,    5 /* Private */,
 
  // slots: parameters
     QMetaType::Void,
     QMetaType::Void, 0x80000000 | 4,    5,
-    QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
 
@@ -96,8 +93,6 @@ Q_CONSTINIT const QMetaObject ClientSession::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<QAbstractSocket::SocketError, std::false_type>,
         // method 'sendFriendsStatusUpdate'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        // method 'sendPendingMessages'
-        QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'checkConnectionStatus'
         QtPrivate::TypeAndForceComplete<void, std::false_type>
     >,
@@ -113,8 +108,7 @@ void ClientSession::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _i
         case 0: _t->handleReadyRead(); break;
         case 1: _t->handleError((*reinterpret_cast< std::add_pointer_t<QAbstractSocket::SocketError>>(_a[1]))); break;
         case 2: _t->sendFriendsStatusUpdate(); break;
-        case 3: _t->sendPendingMessages(); break;
-        case 4: _t->checkConnectionStatus(); break;
+        case 3: _t->checkConnectionStatus(); break;
         default: ;
         }
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
@@ -150,13 +144,13 @@ int ClientSession::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 5)
+        if (_id < 4)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 5;
+        _id -= 4;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 5)
+        if (_id < 4)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 5;
+        _id -= 4;
     }
     return _id;
 }

@@ -28,6 +28,15 @@ QJsonObject createNewMessage(const QString& content, int from, qint64 timestamp)
     return message;
 }
 
+QJsonObject createMessageRead(int friendId)
+{
+    QJsonObject message;
+    message["type"] = Protocol::MessageType::MESSAGE_READ;
+    message["friendId"] = friendId;
+    message["timestamp"] = QDateTime::currentMSecsSinceEpoch();
+    return message;
+}
+
 QJsonObject createRegisterRequest(const QString& username, const QString& password, const QString& email) {
     return QJsonObject{
         {"type", MessageType::REGISTER},

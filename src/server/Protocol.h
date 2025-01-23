@@ -56,6 +56,7 @@ const QString MORE_HISTORY_RESPONSE = "more_history_response";
 const QString GET_LATEST_MESSAGES = "get_latest_messages";
 const QString LATEST_MESSAGES_RESPONSE = "latest_messages_response";
 const QString NEW_MESSAGES = "new_messages";
+const QString MESSAGE_READ = "message_read";
 }
 
 // Status użytkownika
@@ -122,6 +123,7 @@ QJsonObject createLogoutRequest();
 QJsonObject createMessage(int receiverId, const QString& content);
 QJsonObject createMessageAck(const QString& messageId);
 QJsonObject createStatusUpdate(const QString& status);
+QJsonObject createMessageRead(int friendId);
 
 // Ping/Pong
 QJsonObject createPing();

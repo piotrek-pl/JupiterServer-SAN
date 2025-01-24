@@ -64,6 +64,7 @@ const QString SEARCH_USERS_RESPONSE = "search_users_response";
 const QString REMOVE_FRIEND = "remove_friend";
 const QString REMOVE_FRIEND_RESPONSE = "remove_friend_response";
 const QString FRIEND_REMOVED = "friend_removed";
+const QString FRIEND_REQUEST_ACCEPTED_NOTIFICATION = "friend_request_accepted_notification";
 
 // Friend Request Messages
 const QString ADD_FRIEND_REQUEST = "add_friend_request";
@@ -216,6 +217,7 @@ QJsonObject createSentInvitationsResponse(const QJsonArray& invitations);
 QJsonObject createReceivedInvitationsResponse(const QJsonArray& invitations);
 QJsonObject createCancelFriendRequest(int requestId);
 QJsonObject createCancelFriendRequestResponse(bool success, const QString& message = "");
+QJsonObject createFriendRequestAcceptedNotification(int userId, const QString& username);
 
 // Invitation System
 static QJsonObject createInvitationResponse(bool success, const QString& message = "");

@@ -299,5 +299,14 @@ QJsonObject createInvitationsList(const QJsonArray& invitations, bool sent) {
     return response;
 }
 
+QJsonObject createFriendRequestAcceptedNotification(int userId, const QString& username) {
+    return QJsonObject{
+        {"type", MessageType::FRIEND_REQUEST_ACCEPTED_NOTIFICATION},
+        {"user_id", userId},
+        {"username", username},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
 } // namespace MessageStructure
 } // namespace Protocol

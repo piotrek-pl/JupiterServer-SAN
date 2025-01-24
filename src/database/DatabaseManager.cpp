@@ -1446,3 +1446,14 @@ bool DatabaseManager::sendFriendRequest(int senderId, int targetUserId) {
         return false;
     }
 }
+
+QString DatabaseManager::getUserUsername(quint32 userId) {
+    QSqlQuery query(database);
+    query.prepare("SELECT username FROM users WHERE id = ?");
+    query.addBindValue(userId);
+
+    if (query.exec() && query.next()) {
+        return query.value(0).toString();
+    }
+    return QString();
+}

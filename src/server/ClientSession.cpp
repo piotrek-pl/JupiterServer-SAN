@@ -436,11 +436,33 @@ void ClientSession::processMessage(const QByteArray& message)
         }
 
         if (dbManager->acceptFriendInvitation(userId, requestId)) {
+            // Wysyłamy odpowiedź do akceptującego
             QJsonObject response = Protocol::MessageStructure::createFriendRequestAcceptResponse(
                 true, "Friend request accepted successfully");
             sendResponse(QJsonDocument(response).toJson());
 
-            // Odśwież listę znajomych po zaakceptowaniu zaproszenia
+            // Pobieramy dane o zaproszeniu, żeby znać ID drugiego użytkownika
+            auto invitations = dbManager->getReceivedInvitations(userId);
+            for (const auto& inv : invitations) {
+                if (inv.requestId == requestId) {
+                    // Znajdujemy sesję drugiego użytkownika
+                    ClientSession* otherUserSession = ActiveSessions::getInstance().getSession(inv.userId);
+                    if (otherUserSession) {
+                        // Wysyłamy powiadomienie do drugiego użytkownika
+                        QJsonObject notification = Protocol::MessageStructure::createFriendRequestAcceptedNotification(
+                            userId,  // ID użytkownika który zaakceptował
+                            dbManager->getUserUsername(userId)  // nazwa użytkownika który zaakceptował
+                            );
+                        otherUserSession->sendResponse(QJsonDocument(notification).toJson());
+
+                        // Odświeżamy listę znajomych dla drugiego użytkownika
+                        otherUserSession->handleFriendsListRequest();
+                    }
+                    break;
+                }
+            }
+
+            // Odświeżamy listę znajomych dla akceptującego
             handleFriendsListRequest();
         } else {
             sendResponse(QJsonDocument(Protocol::MessageStructure::createError(

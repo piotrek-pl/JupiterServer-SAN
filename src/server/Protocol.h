@@ -63,6 +63,7 @@ const QString SEARCH_USERS = "search_users";
 const QString SEARCH_USERS_RESPONSE = "search_users_response";
 const QString REMOVE_FRIEND = "remove_friend";
 const QString REMOVE_FRIEND_RESPONSE = "remove_friend_response";
+const QString FRIEND_REMOVED = "friend_removed";
 }
 
 // Status użytkownika
@@ -155,6 +156,8 @@ QJsonObject createNewMessage(const QString& content, int from, qint64 timestamp)
 // Wyszukiwanie użytkowników
 QJsonObject createSearchUsersRequest(const QString& query);
 QJsonObject createSearchUsersResponse(const QJsonArray& users);
+
+QJsonObject createFriendRemovedNotification(int friendId);
 
 } // namespace MessageStructure
 

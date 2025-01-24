@@ -226,17 +226,23 @@ void ClientSession::processMessage(const QByteArray& message)
 
         if (friendId > 0 && userId > 0) {
             if (dbManager->removeFriend(userId, friendId)) {
-                // Wysyłamy odpowiedź do użytkownika, który zainicjował usunięcie
+                // Najpierw znajdujemy sesję znajomego
+                ClientSession* friendSession = ActiveSessions::getInstance().getSession(friendId);
+
+                // Najpierw wysyłamy obu użytkownikom odświeżenie listy
+                handleFriendsListRequest();  // Dla inicjatora
+
+                if (friendSession) {
+                    friendSession->handleFriendsListRequest(); // Dla usuniętego znajomego
+                }
+
+                // Potem wysyłamy potwierdzenia
                 QJsonObject response = Protocol::MessageStructure::createRemoveFriendResponse(true);
                 sendResponse(QJsonDocument(response).toJson());
 
-                // Aktualizujemy listę znajomych dla obu użytkowników
-                handleFriendsListRequest();  // Dla inicjatora
-
-                // Znajdź sesję usuniętego znajomego i zaktualizuj jego listę
-                ClientSession* friendSession = ActiveSessions::getInstance().getSession(friendId);
                 if (friendSession) {
-                    friendSession->handleFriendsListRequest();
+                    QJsonObject friendRemovedNotification = Protocol::MessageStructure::createFriendRemovedNotification(userId);
+                    friendSession->sendResponse(QJsonDocument(friendRemovedNotification).toJson());
                 }
 
                 qDebug() << "Successfully removed friend" << friendId << "for user" << userId;

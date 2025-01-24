@@ -156,5 +156,13 @@ QJsonObject createRemoveFriendResponse(bool success) {
     };
 }
 
+QJsonObject createFriendRemovedNotification(int friendId) {
+    return QJsonObject{
+        {"type", MessageType::FRIEND_REMOVED},
+        {"friend_id", friendId},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
 } // namespace MessageStructure
 } // namespace Protocol

@@ -71,6 +71,12 @@ const QString INVITATION_REJECTED = "invitation_rejected";
 const QString INVITATION_CANCELLED = "invitation_cancelled";
 const QString GET_INVITATIONS = "get_invitations";
 const QString INVITATIONS_LIST = "invitations_list";
+const QString ADD_FRIEND_REQUEST = "add_friend_request";
+const QString ADD_FRIEND_RESPONSE = "add_friend_response";
+const QString GET_RECEIVED_INVITATIONS = "get_received_invitations";
+const QString GET_SENT_INVITATIONS = "get_sent_invitations";
+const QString RECEIVED_INVITATIONS_RESPONSE = "received_invitations_response";
+const QString SENT_INVITATIONS_RESPONSE = "sent_invitations_response";
 }
 
 // Status użytkownika
@@ -120,7 +126,16 @@ const QStringList AUTHENTICATED = {
     MessageType::REMOVE_FRIEND,
     MessageType::REMOVE_FRIEND_RESPONSE,
     MessageType::SEARCH_USERS,
-    MessageType::SEARCH_USERS_RESPONSE
+    MessageType::SEARCH_USERS_RESPONSE,
+    MessageType::ADD_FRIEND_REQUEST,
+    MessageType::ADD_FRIEND_RESPONSE,
+    MessageType::SEND_INVITATION,
+    MessageType::INVITATION_RESPONSE,
+    MessageType::INVITATION_ACCEPTED,
+    MessageType::INVITATION_REJECTED,
+    MessageType::INVITATION_CANCELLED,
+    MessageType::GET_INVITATIONS,
+    MessageType::INVITATIONS_LIST
 };
 
 const QStringList DISCONNECTING = {
@@ -168,6 +183,9 @@ QJsonObject createFriendRemovedNotification(int friendId);
 
 static QJsonObject createInvitationResponse(bool success, const QString& message = "");
 static QJsonObject createInvitationsList(const QJsonArray& invitations, bool sent = true);
+
+static QJsonObject createAddFriendRequest(int userId);
+static QJsonObject createAddFriendResponse(bool success, const QString& message = "");
 
 } // namespace MessageStructure
 

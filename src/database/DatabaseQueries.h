@@ -81,6 +81,8 @@ const QString RECEIVED_INVITATIONS_TABLE =
     "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, "
     "FOREIGN KEY (from_user_id) REFERENCES users(id)"
     ") ENGINE=InnoDB;";
+
+
 }
 
 // Zapytania związane z użytkownikami
@@ -269,6 +271,33 @@ const QString GET_REQUEST_STATUS =
 const QString CHECK_REQUEST_EXISTS =
     "SELECT COUNT(*) FROM user_%1_received_invitations "
     "WHERE request_id = ? AND from_user_id = ?";
+
+// Sprawdzanie czy użytkownik istnieje
+const QString CHECK_USER_EXISTS =
+    "SELECT COUNT(*) FROM users WHERE id = ?";
+
+// Sprawdzanie czy już są znajomymi
+const QString CHECK_IF_FRIENDS =
+    "SELECT COUNT(*) FROM user_%1_friends WHERE friend_id = ?";
+
+// Sprawdzanie czy jest już oczekujące zaproszenie
+const QString CHECK_PENDING_INVITATION =
+    "SELECT COUNT(*) FROM user_%1_sent_invitations "
+    "WHERE to_user_id = ? AND status = 'pending'";
+
+// Dodawanie zaproszenia wysłanego
+const QString ADD_FRIEND_REQUEST_SENT =
+    "INSERT INTO user_%1_sent_invitations (to_user_id, to_username) "
+    "SELECT id, username FROM users WHERE id = ?";
+
+// Dodawanie zaproszenia otrzymanego
+const QString ADD_FRIEND_REQUEST_RECEIVED =
+    "INSERT INTO user_%1_received_invitations (from_user_id, from_username) "
+    "SELECT id, username FROM users WHERE id = ?";
+
+// Pobieranie nazwy użytkownika dla zaproszenia
+const QString GET_USERNAME_FOR_INVITATION =
+    "SELECT username FROM users WHERE id = ?";
 }
 
 } // namespace DatabaseQueries

@@ -1281,3 +1281,168 @@ bool DatabaseManager::updateBothInvitationStatuses(quint32 fromUserId, quint32 t
         return false;
     }
 }
+
+QVector<FriendInvitation> DatabaseManager::getSentInvitations(quint32 userId)
+{
+    QVector<FriendInvitation> invitations;
+
+    if (!database.isOpen()) {
+        qWarning() << "Database is not open while getting sent invitations";
+        return invitations;
+    }
+
+    try {
+        QSqlQuery query(database);
+        query.prepare(DatabaseQueries::Invitations::GET_SENT.arg(userId));
+
+        if (!query.exec()) {
+            throw std::runtime_error("Failed to get sent invitations: " +
+                                     query.lastError().text().toStdString());
+        }
+
+        while (query.next()) {
+            FriendInvitation invitation;
+            invitation.requestId = query.value("request_id").toInt();
+            invitation.userId = query.value("to_user_id").toUInt();
+            invitation.username = query.value("to_username").toString();
+            invitation.status = query.value("status").toString();
+            invitation.timestamp = query.value("created_at").toDateTime();
+
+            invitations.append(invitation);
+        }
+
+        qDebug() << "Successfully retrieved" << invitations.size()
+                 << "sent invitations for user" << userId;
+        return invitations;
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error getting sent invitations:" << e.what();
+        return QVector<FriendInvitation>();
+    }
+}
+
+QVector<FriendInvitation> DatabaseManager::getReceivedInvitations(quint32 userId)
+{
+    QVector<FriendInvitation> invitations;
+
+    if (!database.isOpen()) {
+        qWarning() << "Database is not open while getting received invitations";
+        return invitations;
+    }
+
+    try {
+        QSqlQuery query(database);
+        query.prepare(DatabaseQueries::Invitations::GET_RECEIVED.arg(userId));
+
+        if (!query.exec()) {
+            throw std::runtime_error("Failed to get received invitations: " +
+                                     query.lastError().text().toStdString());
+        }
+
+        while (query.next()) {
+            FriendInvitation invitation;
+            invitation.requestId = query.value("request_id").toInt();
+            invitation.userId = query.value("from_user_id").toUInt();
+            invitation.username = query.value("from_username").toString();
+            invitation.status = query.value("status").toString();
+            invitation.timestamp = query.value("created_at").toDateTime();
+
+            invitations.append(invitation);
+        }
+
+        qDebug() << "Successfully retrieved" << invitations.size()
+                 << "received invitations for user" << userId;
+        return invitations;
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error getting received invitations:" << e.what();
+        return QVector<FriendInvitation>();
+    }
+}
+
+bool DatabaseManager::sendFriendRequest(int senderId, int targetUserId) {
+    if (!database.isOpen()) {
+        qWarning() << "Database is not open while sending friend request";
+        return false;
+    }
+
+    qDebug() << "Processing friend request from user" << senderId << "to user" << targetUserId;
+
+    if (!database.transaction()) {
+        qWarning() << "Failed to start transaction for friend request";
+        return false;
+    }
+
+    try {
+        QSqlQuery query(database);
+
+        // Sprawdź czy użytkownik istnieje
+        query.prepare(DatabaseQueries::Invitations::CHECK_USER_EXISTS);
+        query.bindValue(0, targetUserId);
+
+        if (!query.exec() || !query.next()) {
+            throw std::runtime_error("Failed to check if user exists: " +
+                                     query.lastError().text().toStdString());
+        }
+
+        if (query.value(0).toInt() == 0) {
+            throw std::runtime_error("Target user not found");
+        }
+
+        // Sprawdź czy nie są już znajomymi
+        query.prepare(DatabaseQueries::Invitations::CHECK_IF_FRIENDS.arg(senderId));
+        query.bindValue(0, targetUserId);
+
+        if (!query.exec() || !query.next()) {
+            throw std::runtime_error("Failed to check if users are friends: " +
+                                     query.lastError().text().toStdString());
+        }
+
+        if (query.value(0).toInt() > 0) {
+            throw std::runtime_error("Users are already friends");
+        }
+
+        // Sprawdź czy nie ma już oczekującego zaproszenia
+        query.prepare(DatabaseQueries::Invitations::CHECK_PENDING_INVITATION.arg(senderId));
+        query.bindValue(0, targetUserId);
+
+        if (!query.exec() || !query.next()) {
+            throw std::runtime_error("Failed to check pending invitations: " +
+                                     query.lastError().text().toStdString());
+        }
+
+        if (query.value(0).toInt() > 0) {
+            throw std::runtime_error("Friend request already sent");
+        }
+
+        // Dodaj zaproszenie do tabeli wysłanych zaproszeń
+        query.prepare(DatabaseQueries::Invitations::ADD_FRIEND_REQUEST_SENT.arg(senderId));
+        query.bindValue(0, targetUserId);
+
+        if (!query.exec()) {
+            throw std::runtime_error("Failed to add sent invitation: " +
+                                     query.lastError().text().toStdString());
+        }
+
+        // Dodaj zaproszenie do tabeli otrzymanych zaproszeń
+        query.prepare(DatabaseQueries::Invitations::ADD_FRIEND_REQUEST_RECEIVED.arg(targetUserId));
+        query.bindValue(0, senderId);
+
+        if (!query.exec()) {
+            throw std::runtime_error("Failed to add received invitation: " +
+                                     query.lastError().text().toStdString());
+        }
+
+        if (!database.commit()) {
+            throw std::runtime_error("Failed to commit friend request transaction");
+        }
+
+        qDebug() << "Friend request sent successfully from user" << senderId << "to user" << targetUserId;
+        return true;
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error sending friend request:" << e.what();
+        database.rollback();
+        return false;
+    }
+}

@@ -313,6 +313,81 @@ void ClientSession::processMessage(const QByteArray& message)
             qWarning() << "Invalid message read request received";
         }
     }
+    else if (type == Protocol::MessageType::ADD_FRIEND_REQUEST) {
+        int targetUserId = json["user_id"].toInt();
+        qDebug() << "Processing add friend request from user" << userId << "to user" << targetUserId;
+
+        if (targetUserId <= 0 || userId <= 0) {
+            sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Invalid user ID")).toJson());
+            return;
+        }
+
+        if (targetUserId == userId) {
+            sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Cannot send friend request to yourself")).toJson());
+            return;
+        }
+
+        // Przekazujemy żądanie do DatabaseManager
+        if (dbManager->sendFriendRequest(userId, targetUserId)) {
+            QJsonObject response;
+            response["type"] = Protocol::MessageType::ADD_FRIEND_RESPONSE;
+            response["status"] = "success";
+            response["message"] = "Friend request sent successfully";
+            response["timestamp"] = QDateTime::currentMSecsSinceEpoch();
+            sendResponse(QJsonDocument(response).toJson());
+
+            qDebug() << "Friend request sent successfully from user" << userId << "to user" << targetUserId;
+        } else {
+            sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Failed to send friend request")).toJson());
+            qWarning() << "Failed to send friend request from user" << userId << "to user" << targetUserId;
+        }
+    }
+    else if (type == Protocol::MessageType::GET_RECEIVED_INVITATIONS) {
+        auto invitations = dbManager->getReceivedInvitations(userId);
+        QJsonArray invitationsArray;
+
+        for (const auto& invitation : invitations) {
+            QJsonObject invObj;
+            invObj["request_id"] = invitation.requestId;
+            invObj["user_id"] = QString::number(invitation.userId);
+            invObj["username"] = invitation.username;
+            invObj["status"] = invitation.status;
+            invObj["timestamp"] = invitation.timestamp.toMSecsSinceEpoch();
+            invitationsArray.append(invObj);
+        }
+
+        QJsonObject response{
+            {"type", Protocol::MessageType::RECEIVED_INVITATIONS_RESPONSE},
+            {"invitations", invitationsArray},
+            {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+        };
+
+        qDebug() << "Sending received invitations response with" << invitationsArray.size() << "invitations";
+        sendResponse(QJsonDocument(response).toJson());
+    }
+    else if (type == Protocol::MessageType::GET_SENT_INVITATIONS) {
+        auto invitations = dbManager->getSentInvitations(userId);
+        QJsonArray invitationsArray;
+
+        for (const auto& invitation : invitations) {
+            QJsonObject invObj;
+            invObj["request_id"] = invitation.requestId;
+            invObj["user_id"] = QString::number(invitation.userId);
+            invObj["username"] = invitation.username;
+            invObj["status"] = invitation.status;
+            invObj["timestamp"] = invitation.timestamp.toMSecsSinceEpoch();
+            invitationsArray.append(invObj);
+        }
+
+        QJsonObject response{
+            {"type", Protocol::MessageType::SENT_INVITATIONS_RESPONSE},
+            {"invitations", invitationsArray},
+            {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+        };
+
+        qDebug() << "Sending sent invitations response with" << invitationsArray.size() << "invitations";
+        sendResponse(QJsonDocument(response).toJson());
+    }
     else if (type == Protocol::MessageType::LOGOUT) {
         handleLogout();
     }

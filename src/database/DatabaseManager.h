@@ -95,6 +95,7 @@ public:
     QVector<FriendInvitation> getSentInvitations(quint32 userId);
     QVector<FriendInvitation> getReceivedInvitations(quint32 userId);
 
+    bool sendFriendRequest(int senderId, int targetUserId);
 private:
     // Metody pomocnicze dla użytkowników
     bool createTablesIfNotExist();

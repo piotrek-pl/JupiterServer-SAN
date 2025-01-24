@@ -108,6 +108,77 @@ void fillTestData(DatabaseManager* db) {
             throw std::runtime_error("Failed to add test3: " + query.lastError().text().toStdString());
         }
 
+        // Dodaj test4
+        query.prepare("INSERT INTO users (username, password, salt, status) VALUES (?, ?, ?, ?)");
+        query.bindValue(0, "test4");
+        query.bindValue(1, hashPassword("test4", salt));
+        query.bindValue(2, salt);
+        query.bindValue(3, "offline");
+
+        if (!query.exec()) {
+            throw std::runtime_error("Failed to add test4: " + query.lastError().text().toStdString());
+        }
+
+        // Dodaj test5
+        query.prepare("INSERT INTO users (username, password, salt, status) VALUES (?, ?, ?, ?)");
+        query.bindValue(0, "test5");
+        query.bindValue(1, hashPassword("test5", salt));
+        query.bindValue(2, salt);
+        query.bindValue(3, "offline");
+
+        if (!query.exec()) {
+            throw std::runtime_error("Failed to add test5: " + query.lastError().text().toStdString());
+        }
+
+        // Dodaj test6
+        query.prepare("INSERT INTO users (username, password, salt, status) VALUES (?, ?, ?, ?)");
+        query.bindValue(0, "test6");
+        query.bindValue(1, hashPassword("test6", salt));
+        query.bindValue(2, salt);
+        query.bindValue(3, "offline");
+
+        if (!query.exec()) {
+            throw std::runtime_error("Failed to add test6: " + query.lastError().text().toStdString());
+        }
+
+        // Tworzenie tabel zaproszeń dla wszystkich użytkowników
+        qDebug() << "Creating invitation tables...";
+        for(int i = 1; i <= 6; i++) {
+            QString sentTableQuery = QString(
+                                         "CREATE TABLE IF NOT EXISTS user_%1_sent_invitations ("
+                                         "request_id INT AUTO_INCREMENT PRIMARY KEY, "
+                                         "to_user_id INT NOT NULL, "
+                                         "to_username VARCHAR(32) NOT NULL, "
+                                         "status ENUM('pending', 'accepted', 'rejected', 'cancelled') DEFAULT 'pending', "
+                                         "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+                                         "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, "
+                                         "FOREIGN KEY (to_user_id) REFERENCES users(id)"
+                                         ") ENGINE=InnoDB;").arg(i);
+
+            QString receivedTableQuery = QString(
+                                             "CREATE TABLE IF NOT EXISTS user_%1_received_invitations ("
+                                             "request_id INT AUTO_INCREMENT PRIMARY KEY, "
+                                             "from_user_id INT NOT NULL, "
+                                             "from_username VARCHAR(32) NOT NULL, "
+                                             "status ENUM('pending', 'accepted', 'rejected', 'cancelled') DEFAULT 'pending', "
+                                             "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+                                             "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, "
+                                             "FOREIGN KEY (from_user_id) REFERENCES users(id)"
+                                             ") ENGINE=InnoDB;").arg(i);
+
+            if (!query.exec(sentTableQuery)) {
+                throw std::runtime_error("Failed to create sent invitations table for user " +
+                                         QString::number(i).toStdString());
+            }
+            qDebug() << "Created new invitations table:" << QString("user_%1_sent_invitations").arg(i);
+
+            if (!query.exec(receivedTableQuery)) {
+                throw std::runtime_error("Failed to create received invitations table for user " +
+                                         QString::number(i).toStdString());
+            }
+            qDebug() << "Created new invitations table:" << QString("user_%1_received_invitations").arg(i);
+        }
+
         // Dodawanie relacji znajomych dla wszystkich użytkowników testowych
         qDebug() << "Adding friends relationships...";
 

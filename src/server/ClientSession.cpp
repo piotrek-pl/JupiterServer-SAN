@@ -382,6 +382,50 @@ void ClientSession::processMessage(const QByteArray& message)
         qDebug() << "Sending sent invitations response with" << invitationsArray.size() << "invitations";
         sendResponse(QJsonDocument(response).toJson());
     }
+    else if (type == Protocol::MessageType::CANCEL_FRIEND_REQUEST) {
+        int requestId = json["request_id"].toInt();
+
+        if (requestId <= 0 || userId <= 0) {
+            sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
+                                           "Invalid request ID")).toJson());
+            qWarning() << "Invalid cancel friend request received - requestId:" << requestId;
+            return;
+        }
+
+        if (dbManager->cancelFriendInvitation(userId, requestId)) {
+            // Najpierw wysyłamy potwierdzenie anulowania
+            QJsonObject response = Protocol::MessageStructure::createCancelFriendRequestResponse(
+                true, "Friend request cancelled successfully");
+            sendResponse(QJsonDocument(response).toJson());
+
+            // Następnie odświeżamy listę wysłanych zaproszeń
+            auto invitations = dbManager->getSentInvitations(userId);
+            QJsonArray invitationsArray;
+
+            for (const auto& invitation : invitations) {
+                QJsonObject invObj;
+                invObj["request_id"] = invitation.requestId;
+                invObj["user_id"] = QString::number(invitation.userId);
+                invObj["username"] = invitation.username;
+                invObj["status"] = invitation.status;
+                invObj["timestamp"] = invitation.timestamp.toMSecsSinceEpoch();
+                invitationsArray.append(invObj);
+            }
+
+            QJsonObject updateResponse{
+                {"type", Protocol::MessageType::SENT_INVITATIONS_RESPONSE},
+                {"invitations", invitationsArray},
+                {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+            };
+
+            qDebug() << "Successfully cancelled friend request" << requestId << "for user" << userId;
+            sendResponse(QJsonDocument(updateResponse).toJson());
+        } else {
+            sendResponse(QJsonDocument(Protocol::MessageStructure::createCancelFriendRequestResponse(
+                                           false, "Failed to cancel friend request")).toJson());
+            qWarning() << "Failed to cancel friend request" << requestId << "for user" << userId;
+        }
+    }
     else if (type == Protocol::MessageType::LOGOUT) {
         handleLogout();
     }

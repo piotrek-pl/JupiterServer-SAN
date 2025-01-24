@@ -89,6 +89,7 @@ const QString INVITATION_REJECTED = "invitation_rejected";
 const QString INVITATION_CANCELLED = "invitation_cancelled";
 const QString GET_INVITATIONS = "get_invitations";
 const QString INVITATIONS_LIST = "invitations_list";
+const QString INVITATION_ALREADY_EXISTS = "invitation_already_exists";
 }
 
 // Status użytkownika
@@ -158,7 +159,8 @@ const QStringList AUTHENTICATED = {
     MessageType::INVITATION_REJECTED,
     MessageType::INVITATION_CANCELLED,
     MessageType::GET_INVITATIONS,
-    MessageType::INVITATIONS_LIST
+    MessageType::INVITATIONS_LIST,
+    MessageType::INVITATION_ALREADY_EXISTS
 };
 
 const QStringList DISCONNECTING = {

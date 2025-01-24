@@ -326,14 +326,28 @@ void ClientSession::processMessage(const QByteArray& message)
             return;
         }
 
-        // Przekazujemy żądanie do DatabaseManager
+        // Próbujemy wysłać zaproszenie
         if (dbManager->sendFriendRequest(userId, targetUserId)) {
-            // Używamy tylko jednej metody tworzenia odpowiedzi - z Protocol::MessageStructure
             QJsonObject response = Protocol::MessageStructure::createAddFriendResponse(true, "Friend request sent successfully");
             sendResponse(QJsonDocument(response).toJson());
+            qDebug() << "Friend request sent successfully from user" << userId << "to user" << targetUserId;
         } else {
-            sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Failed to send friend request")).toJson());
-            qWarning() << "Failed to send friend request from user" << userId << "to user" << targetUserId;
+            // Sprawdzamy czy błąd wynika z istniejącego zaproszenia
+            QString targetUsername = dbManager->getUserUsername(targetUserId);
+
+            // Wysyłamy specjalną odpowiedź INVITATION_ALREADY_EXISTS
+            QJsonObject response{
+                {"type", Protocol::MessageType::INVITATION_ALREADY_EXISTS},
+                {"user_id", targetUserId},
+                {"username", targetUsername},
+                {"status", "error"},
+                {"error_code", "INVITATION_ALREADY_EXISTS"},
+                {"message", "Invitation already sent to this user"},
+                {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+            };
+
+            sendResponse(QJsonDocument(response).toJson());
+            qDebug() << "Error sending friend request: Friend request already sent";
         }
     }
     else if (type == Protocol::MessageType::GET_RECEIVED_INVITATIONS) {

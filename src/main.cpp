@@ -69,6 +69,15 @@ void fillTestData(DatabaseManager* db) {
         if (!query.exec("DROP TABLE IF EXISTS user_3_friends")) {
             qDebug() << "Drop friends table error:" << query.lastError().text();
         }
+        if (!query.exec("DROP TABLE IF EXISTS user_4_friends")) {
+            qDebug() << "Drop friends table error:" << query.lastError().text();
+        }
+        if (!query.exec("DROP TABLE IF EXISTS user_5_friends")) {
+            qDebug() << "Drop friends table error:" << query.lastError().text();
+        }
+        if (!query.exec("DROP TABLE IF EXISTS user_6_friends")) {
+            qDebug() << "Drop friends table error:" << query.lastError().text();
+        }
         if (!query.exec("DELETE FROM user_sessions")) {
             qDebug() << "Clean sessions error:" << query.lastError().text();
         }
@@ -209,6 +218,25 @@ void fillTestData(DatabaseManager* db) {
         if (!db->addFriend(3, 1) || !db->addFriend(3, 2)) {
             throw std::runtime_error("Failed to add friends for test3");
         }
+
+        // Tworzenie tabel friends dla użytkowników 4-6
+        for(int i = 4; i <= 6; i++) {
+            QString createFriendsTableQuery = QString(
+                                                  "CREATE TABLE IF NOT EXISTS user_%1_friends ("
+                                                  "friend_id INT NOT NULL, "
+                                                  "FOREIGN KEY (friend_id) REFERENCES users(id), "
+                                                  "PRIMARY KEY (friend_id)"
+                                                  ") ENGINE=InnoDB;").arg(i);
+
+            if (!query.exec(createFriendsTableQuery)) {
+                throw std::runtime_error("Failed to create friends table for user " +
+                                         QString::number(i).toStdString() +
+                                         ": " + query.lastError().text().toStdString());
+            }
+            qDebug() << "Created new friends table:" << QString("user_%1_friends").arg(i);
+        }
+
+
 
         // Dodawanie testowych wiadomości - 50 wiadomości między każdą parą użytkowników
         qDebug() << "Adding test messages...";

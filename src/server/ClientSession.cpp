@@ -426,6 +426,45 @@ void ClientSession::processMessage(const QByteArray& message)
             qWarning() << "Failed to cancel friend request" << requestId << "for user" << userId;
         }
     }
+    else if (type == Protocol::MessageType::FRIEND_REQUEST_ACCEPT) {
+        int requestId = json["request_id"].toInt();
+
+        if (requestId <= 0 || userId <= 0) {
+            sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
+                                           "Invalid request ID")).toJson());
+            return;
+        }
+
+        if (dbManager->acceptFriendInvitation(userId, requestId)) {
+            QJsonObject response = Protocol::MessageStructure::createFriendRequestAcceptResponse(
+                true, "Friend request accepted successfully");
+            sendResponse(QJsonDocument(response).toJson());
+
+            // Odśwież listę znajomych po zaakceptowaniu zaproszenia
+            handleFriendsListRequest();
+        } else {
+            sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
+                                           "Failed to accept friend request")).toJson());
+        }
+    }
+    else if (type == Protocol::MessageType::FRIEND_REQUEST_REJECT) {
+        int requestId = json["request_id"].toInt();
+
+        if (requestId <= 0 || userId <= 0) {
+            sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
+                                           "Invalid request ID")).toJson());
+            return;
+        }
+
+        if (dbManager->rejectFriendInvitation(userId, requestId)) {
+            QJsonObject response = Protocol::MessageStructure::createFriendRequestRejectResponse(
+                true, "Friend request rejected successfully");
+            sendResponse(QJsonDocument(response).toJson());
+        } else {
+            sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
+                                           "Failed to reject friend request")).toJson());
+        }
+    }
     else if (type == Protocol::MessageType::LOGOUT) {
         handleLogout();
     }

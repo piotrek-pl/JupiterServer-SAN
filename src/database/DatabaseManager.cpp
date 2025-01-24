@@ -878,3 +878,56 @@ QVector<quint32> DatabaseManager::getUnreadMessagesUsers(quint32 userId)
 
     return usersWithUnread;
 }
+
+bool DatabaseManager::removeFriend(quint32 userId, quint32 friendId)
+{
+    qDebug() << "Attempting to remove friend" << friendId << "for user" << userId;
+
+    if (!database.isOpen()) {
+        qWarning() << "Database is not open during friend removal!";
+        return false;
+    }
+
+    if (!database.transaction()) {
+        qWarning() << "Failed to start transaction for friend removal";
+        return false;
+    }
+
+    try {
+        // Sprawdź czy użytkownicy istnieją
+        if (!userExists(userId) || !userExists(friendId)) {
+            throw std::runtime_error("Invalid user or friend ID");
+        }
+
+        // Usuń znajomego z listy użytkownika
+        QSqlQuery query(database);
+        query.prepare(DatabaseQueries::Friends::REMOVE.arg(userId));
+        query.addBindValue(friendId);
+
+        if (!query.exec()) {
+            throw std::runtime_error("Failed to remove friend from user's list: " +
+                                     query.lastError().text().toStdString());
+        }
+
+        // Usuń użytkownika z listy znajomego
+        query.prepare(DatabaseQueries::Friends::REMOVE.arg(friendId));
+        query.addBindValue(userId);
+
+        if (!query.exec()) {
+            throw std::runtime_error("Failed to remove user from friend's list: " +
+                                     query.lastError().text().toStdString());
+        }
+
+        if (!database.commit()) {
+            throw std::runtime_error("Failed to commit friend removal");
+        }
+
+        qDebug() << "Successfully removed friend relationship between" << userId << "and" << friendId;
+        return true;
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error removing friend:" << e.what();
+        database.rollback();
+        return false;
+    }
+}

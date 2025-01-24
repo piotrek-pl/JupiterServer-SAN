@@ -76,6 +76,7 @@ public:
                                            int limit = Protocol::ChatHistory::MESSAGE_BATCH_SIZE);
     QVector<QJsonObject> getNewMessages(quint32 userId, qint64 lastMessageId);
 
+    bool removeFriend(quint32 userId, quint32 friendId);
 private:
     // Metody pomocnicze dla użytkowników
     bool createTablesIfNotExist();

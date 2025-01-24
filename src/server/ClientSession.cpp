@@ -193,7 +193,6 @@ void ClientSession::processMessage(const QByteArray& message)
             qWarning() << "Invalid status update request received";
         }
     }
-    // Nowa obsługa wyszukiwania użytkowników
     else if (type == Protocol::MessageType::SEARCH_USERS) {
         QString searchQuery = json["query"].toString();
         qDebug() << "Processing search users request with query:" << searchQuery;
@@ -220,6 +219,36 @@ void ClientSession::processMessage(const QByteArray& message)
         } else {
             qWarning() << "Received empty search query";
             sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Empty search query")).toJson());
+        }
+    }
+    else if (type == Protocol::MessageType::REMOVE_FRIEND) {
+        quint32 friendId = json["friend_id"].toInt();
+
+        if (friendId > 0 && userId > 0) {
+            if (dbManager->removeFriend(userId, friendId)) {
+                // Wysyłamy odpowiedź do użytkownika, który zainicjował usunięcie
+                QJsonObject response = Protocol::MessageStructure::createRemoveFriendResponse(true);
+                sendResponse(QJsonDocument(response).toJson());
+
+                // Aktualizujemy listę znajomych dla obu użytkowników
+                handleFriendsListRequest();  // Dla inicjatora
+
+                // Znajdź sesję usuniętego znajomego i zaktualizuj jego listę
+                ClientSession* friendSession = ActiveSessions::getInstance().getSession(friendId);
+                if (friendSession) {
+                    friendSession->handleFriendsListRequest();
+                }
+
+                qDebug() << "Successfully removed friend" << friendId << "for user" << userId;
+            } else {
+                QJsonObject response = Protocol::MessageStructure::createRemoveFriendResponse(false);
+                sendResponse(QJsonDocument(response).toJson());
+                qWarning() << "Failed to remove friend" << friendId << "for user" << userId;
+            }
+        } else {
+            sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
+                                           "Invalid friend removal request")).toJson());
+            qWarning() << "Invalid friend removal request received";
         }
     }
     else if (type == Protocol::MessageType::GET_LATEST_MESSAGES) {

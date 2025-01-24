@@ -2,7 +2,7 @@
  * @file Protocol.h
  * @brief Network protocol definition
  * @author piotrek-pl
- * @date 2025-01-20 15:14:09
+ * @date 2025-01-24 09:09:14
  */
 
 #ifndef PROTOCOL_H
@@ -61,6 +61,8 @@ const QString UNREAD_FROM = "unread_from";
 const QString MESSAGE_READ_RESPONSE = "message_read_response";
 const QString SEARCH_USERS = "search_users";
 const QString SEARCH_USERS_RESPONSE = "search_users_response";
+const QString REMOVE_FRIEND = "remove_friend";
+const QString REMOVE_FRIEND_RESPONSE = "remove_friend_response";
 }
 
 // Status użytkownika
@@ -106,7 +108,11 @@ const QStringList AUTHENTICATED = {
     MessageType::MESSAGE_ACK,
     MessageType::GET_CHAT_HISTORY,
     MessageType::GET_MORE_HISTORY,
-    MessageType::NEW_MESSAGES
+    MessageType::NEW_MESSAGES,
+    MessageType::REMOVE_FRIEND,
+    MessageType::REMOVE_FRIEND_RESPONSE,
+    MessageType::SEARCH_USERS,
+    MessageType::SEARCH_USERS_RESPONSE
 };
 
 const QStringList DISCONNECTING = {
@@ -140,11 +146,15 @@ QJsonObject createError(const QString& message);
 // Lista znajomych
 QJsonObject createGetFriendsList();
 QJsonObject createFriendsStatusUpdate(const QJsonArray& friends);
+QJsonObject createRemoveFriendRequest(int friendId);
+QJsonObject createRemoveFriendResponse(bool success);
 
+// Wiadomości czatu
 QJsonObject createNewMessage(const QString& content, int from, qint64 timestamp);
 
+// Wyszukiwanie użytkowników
 QJsonObject createSearchUsersRequest(const QString& query);
-QJsonObject createSearchUsersRequest(const QString& query);
+QJsonObject createSearchUsersResponse(const QJsonArray& users);
 
 } // namespace MessageStructure
 

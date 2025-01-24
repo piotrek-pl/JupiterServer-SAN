@@ -46,6 +46,19 @@ void fillTestData(DatabaseManager* db) {
             }
         }
 
+        // Usuwanie tabel zaproszeń
+        query.exec("SELECT TABLE_NAME FROM information_schema.tables "
+                   "WHERE table_schema = DATABASE() "
+                   "AND (table_name LIKE 'user_%_sent_invitations' "
+                   "OR table_name LIKE 'user_%_received_invitations')");
+        while (query.next()) {
+            QString tableName = query.value(0).toString();
+            QSqlQuery dropQuery(database);
+            if (!dropQuery.exec("DROP TABLE IF EXISTS " + tableName)) {
+                qDebug() << "Drop invitations table error:" << dropQuery.lastError().text();
+            }
+        }
+
         // Usuwanie pozostałych tabel
         if (!query.exec("DROP TABLE IF EXISTS user_1_friends")) {
             qDebug() << "Drop friends table error:" << query.lastError().text();

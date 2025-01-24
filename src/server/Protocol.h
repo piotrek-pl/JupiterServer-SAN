@@ -59,6 +59,8 @@ const QString NEW_MESSAGES = "new_messages";
 const QString MESSAGE_READ = "message_read";
 const QString UNREAD_FROM = "unread_from";
 const QString MESSAGE_READ_RESPONSE = "message_read_response";
+const QString SEARCH_USERS = "search_users";
+const QString SEARCH_USERS_RESPONSE = "search_users_response";
 }
 
 // Status użytkownika
@@ -140,6 +142,9 @@ QJsonObject createGetFriendsList();
 QJsonObject createFriendsStatusUpdate(const QJsonArray& friends);
 
 QJsonObject createNewMessage(const QString& content, int from, qint64 timestamp);
+
+QJsonObject createSearchUsersRequest(const QString& query);
+QJsonObject createSearchUsersRequest(const QString& query);
 
 } // namespace MessageStructure
 

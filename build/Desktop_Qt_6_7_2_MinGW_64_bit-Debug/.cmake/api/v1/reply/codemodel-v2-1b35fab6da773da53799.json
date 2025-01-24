@@ -49,7 +49,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "JupiterServer::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-JupiterServer-Debug-9caa025611dda9ba18d4.json",
+					"jsonFile" : "target-JupiterServer-Debug-a4711e63c54b24742731.json",
 					"name" : "JupiterServer",
 					"projectIndex" : 0
 				},
@@ -70,7 +70,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "jupiter_server_tests::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-jupiter_server_tests-Debug-52358e228e39ca74fd2b.json",
+					"jsonFile" : "target-jupiter_server_tests-Debug-94f69ba87a075994faaf.json",
 					"name" : "jupiter_server_tests",
 					"projectIndex" : 0
 				},

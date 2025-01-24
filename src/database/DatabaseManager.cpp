@@ -509,6 +509,66 @@ bool DatabaseManager::hasMoreHistory(quint32 userId1, quint32 userId2, int offse
     return false;
 }
 
+QVector<UserSearchResult> DatabaseManager::searchUsers(const QString& query, quint32 currentUserId)
+{
+    QVector<UserSearchResult> results;
+
+    qDebug() << "Searching for users with query:" << query
+             << "excluding current user ID:" << currentUserId;
+
+    if (!database.isOpen()) {
+        qWarning() << "Database is not open during user search!";
+        return results;
+    }
+
+    if (query.isEmpty()) {
+        qWarning() << "Empty search query provided";
+        return results;
+    }
+
+    try {
+        QSqlQuery sqlQuery(database);
+        // Przygotuj zapytanie SQL
+        sqlQuery.prepare(
+            "SELECT id, username FROM users "
+            "WHERE username LIKE ? "
+            "AND id != ? "  // Wykluczamy bieżącego użytkownika
+            "ORDER BY username "
+            "LIMIT 20"
+            );
+
+        // Dodaj parametry
+        sqlQuery.addBindValue("%" + query + "%");  // % dla LIKE
+        sqlQuery.addBindValue(currentUserId);
+
+        // Wykonaj zapytanie
+        if (!sqlQuery.exec()) {
+            qWarning() << "Search users query failed:"
+                       << sqlQuery.lastError().text();
+            return results;
+        }
+
+        // Przetwórz wyniki
+        while (sqlQuery.next()) {
+            UserSearchResult result;
+            result.id = sqlQuery.value(0).toUInt();
+            result.username = sqlQuery.value(1).toString();
+
+            qDebug() << "Found user:" << result.username
+                     << "with ID:" << result.id;
+
+            results.append(result);
+        }
+
+        qDebug() << "Search completed. Found" << results.size() << "users";
+        return results;
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error during user search:" << e.what();
+        return results;
+    }
+}
+
 bool DatabaseManager::verifyPassword(const QString& saltedPassword, const QString& hash)
 {
     QString computedHash = hashPassword(saltedPassword);

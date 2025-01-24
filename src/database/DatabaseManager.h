@@ -17,6 +17,12 @@ struct ChatMessage {
     bool isRead;
 };
 
+// Struktura reprezentująca wynik wyszukiwania użytkowników
+struct UserSearchResult {
+    quint32 id;
+    QString username;
+};
+
 class DatabaseManager : public QObject
 {
     Q_OBJECT
@@ -53,6 +59,7 @@ public:
     bool authenticateUser(const QString& username, const QString& password, quint32& userId);
     bool getUserStatus(quint32 userId, QString& status);
     bool updateUserStatus(quint32 userId, const QString& status);
+    QVector<UserSearchResult> searchUsers(const QString& query, quint32 currentUserId); // Nowa metoda
 
     // Operacje na wiadomościach - nowa implementacja chatów
     bool storeMessage(quint32 senderId, quint32 receiverId, const QString& message);

@@ -193,6 +193,35 @@ void ClientSession::processMessage(const QByteArray& message)
             qWarning() << "Invalid status update request received";
         }
     }
+    // Nowa obsługa wyszukiwania użytkowników
+    else if (type == Protocol::MessageType::SEARCH_USERS) {
+        QString searchQuery = json["query"].toString();
+        qDebug() << "Processing search users request with query:" << searchQuery;
+
+        if (!searchQuery.isEmpty()) {
+            auto results = dbManager->searchUsers(searchQuery, userId);
+
+            QJsonArray usersArray;
+            for (const auto& result : results) {
+                QJsonObject userObj;
+                userObj["id"] = QString::number(result.id);
+                userObj["username"] = result.username;
+                usersArray.append(userObj);
+            }
+
+            QJsonObject response{
+                {"type", Protocol::MessageType::SEARCH_USERS_RESPONSE},
+                {"users", usersArray},
+                {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+            };
+
+            qDebug() << "Sending search response with" << usersArray.size() << "results";
+            sendResponse(QJsonDocument(response).toJson());
+        } else {
+            qWarning() << "Received empty search query";
+            sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Empty search query")).toJson());
+        }
+    }
     else if (type == Protocol::MessageType::GET_LATEST_MESSAGES) {
         quint32 friendId = json["friend_id"].toInt();
         int limit = json["limit"].toInt(Protocol::ChatHistory::MESSAGE_BATCH_SIZE);

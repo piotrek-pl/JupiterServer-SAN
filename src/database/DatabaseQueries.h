@@ -95,6 +95,13 @@ const QString GET_USER_INFO =
 const QString UPDATE_LAST_LOGIN =
     "UPDATE users SET last_login = CURRENT_TIMESTAMP "
     "WHERE id = ?";
+
+const QString SEARCH_USERS =
+    "SELECT id, username FROM users "
+    "WHERE username LIKE ? "
+    "AND id != ? "  // wykluczamy bieżącego użytkownika
+    "ORDER BY username "
+    "LIMIT 20";
 }
 
 // Zapytania związane z wiadomościami

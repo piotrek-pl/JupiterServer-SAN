@@ -2,10 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "JupiterServer.exe"
+			"path" : "jupiter_server_tests.exe"
 		},
 		{
-			"path" : "JupiterServer.pdb"
+			"path" : "jupiter_server_tests.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -37,13 +37,13 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 87,
+				"line" : 146,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 99,
+				"line" : 152,
 				"parent" : 0
 			},
 			{
@@ -111,7 +111,7 @@
 			{
 				"command" : 5,
 				"file" : 0,
-				"line" : 94,
+				"line" : 161,
 				"parent" : 0
 			}
 		]
@@ -142,6 +142,18 @@
 				{
 					"backtrace" : 2,
 					"define" : "QT_SQL_LIB"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "QT_TESTCASE_BUILDDIR=\"D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug\""
+				},
+				{
+					"backtrace" : 2,
+					"define" : "QT_TESTCASE_SOURCEDIR=\"D:/programowanie/Qt/SAN/JupiterServer\""
+				},
+				{
+					"backtrace" : 2,
+					"define" : "QT_TESTLIB_LIB"
 				},
 				{
 					"backtrace" : 2,
@@ -176,11 +188,19 @@
 			[
 				{
 					"backtrace" : 0,
-					"path" : "D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/JupiterServer_autogen/include"
+					"path" : "D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/jupiter_server_tests_autogen/include"
 				},
 				{
 					"backtrace" : 15,
 					"path" : "D:/programowanie/Qt/SAN/JupiterServer/src"
+				},
+				{
+					"backtrace" : 15,
+					"path" : "D:/programowanie/Qt/SAN/JupiterServer/tests"
+				},
+				{
+					"backtrace" : 15,
+					"path" : "D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug"
 				},
 				{
 					"backtrace" : 2,
@@ -210,6 +230,11 @@
 				{
 					"backtrace" : 2,
 					"isSystem" : true,
+					"path" : "C:/Qt/6.7.2/mingw_64/include/QtTest"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
 					"path" : "C:/Qt/6.7.2/mingw_64/include/QtWebSockets"
 				}
 			],
@@ -233,8 +258,7 @@
 				5,
 				6,
 				7,
-				8,
-				9
+				8
 			]
 		}
 	],
@@ -242,13 +266,13 @@
 	[
 		{
 			"backtrace" : 0,
-			"id" : "JupiterServer_autogen::@6890427a1f51a3e7e1df"
+			"id" : "jupiter_server_tests_autogen::@6890427a1f51a3e7e1df"
 		},
 		{
-			"id" : "JupiterServer_autogen_timestamp_deps::@6890427a1f51a3e7e1df"
+			"id" : "jupiter_server_tests_autogen_timestamp_deps::@6890427a1f51a3e7e1df"
 		}
 	],
-	"id" : "JupiterServer::@6890427a1f51a3e7e1df",
+	"id" : "jupiter_server_tests::@6890427a1f51a3e7e1df",
 	"link" : 
 	{
 		"commandFragments" : 
@@ -264,6 +288,11 @@
 			{
 				"backtrace" : 2,
 				"fragment" : "C:\\Qt\\6.7.2\\mingw_64\\lib\\libQt6Sql.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "C:\\Qt\\6.7.2\\mingw_64\\lib\\libQt6Test.a",
 				"role" : "libraries"
 			},
 			{
@@ -303,8 +332,8 @@
 		],
 		"language" : "CXX"
 	},
-	"name" : "JupiterServer",
-	"nameOnDisk" : "JupiterServer.exe",
+	"name" : "jupiter_server_tests",
+	"nameOnDisk" : "jupiter_server_tests.exe",
 	"paths" : 
 	{
 		"build" : ".",
@@ -324,36 +353,31 @@
 				5,
 				6,
 				7,
-				8,
-				9
+				8
 			]
 		},
 		{
 			"name" : "Header Files",
 			"sourceIndexes" : 
 			[
+				9,
 				10,
 				11,
-				12,
-				13,
-				14,
-				15,
-				16,
-				17
+				12
 			]
 		},
 		{
 			"name" : "",
 			"sourceIndexes" : 
 			[
-				18
+				13
 			]
 		},
 		{
 			"name" : "CMake Rules",
 			"sourceIndexes" : 
 			[
-				19
+				14
 			]
 		}
 	],
@@ -363,25 +387,37 @@
 			"backtrace" : 0,
 			"compileGroupIndex" : 0,
 			"isGenerated" : true,
-			"path" : "build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/JupiterServer_autogen/mocs_compilation.cpp",
+			"path" : "build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/jupiter_server_tests_autogen/mocs_compilation.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "src/main.cpp",
+			"path" : "tests/main_test.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "src/server/Server.cpp",
+			"path" : "tests/ProtocolTest.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "src/server/ClientSession.cpp",
+			"path" : "tests/ClientSessionTest.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "tests/TestSocket.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "tests/TestDatabaseQueries.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
@@ -393,83 +429,45 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
+			"path" : "src/server/ClientSession.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
 			"path" : "src/database/DatabaseManager.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "src/database/DatabaseQueries.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "src/models/User.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "src/models/Message.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "src/network/NotificationManager.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/server/Server.h",
+			"path" : "tests/ProtocolTest.h",
 			"sourceGroupIndex" : 1
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/server/ClientSession.h",
+			"path" : "tests/ClientSessionTest.h",
 			"sourceGroupIndex" : 1
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/server/Protocol.h",
+			"path" : "tests/TestSocket.h",
 			"sourceGroupIndex" : 1
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/database/DatabaseManager.h",
-			"sourceGroupIndex" : 1
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/database/DatabaseQueries.h",
-			"sourceGroupIndex" : 1
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/models/User.h",
-			"sourceGroupIndex" : 1
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/models/Message.h",
-			"sourceGroupIndex" : 1
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/network/NotificationManager.h",
+			"path" : "tests/TestDatabaseQueries.h",
 			"sourceGroupIndex" : 1
 		},
 		{
 			"backtrace" : 0,
 			"isGenerated" : true,
-			"path" : "build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/JupiterServer_autogen/timestamp",
+			"path" : "build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/jupiter_server_tests_autogen/timestamp",
 			"sourceGroupIndex" : 2
 		},
 		{
 			"backtrace" : 0,
 			"isGenerated" : true,
-			"path" : "build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/JupiterServer_autogen/timestamp.rule",
+			"path" : "build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/jupiter_server_tests_autogen/timestamp.rule",
 			"sourceGroupIndex" : 3
 		}
 	],

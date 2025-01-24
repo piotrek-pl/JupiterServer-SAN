@@ -2,7 +2,7 @@
  * @file Protocol.h
  * @brief Network protocol definition
  * @author piotrek-pl
- * @date 2025-01-24 09:09:14
+ * @date 2025-01-24 14:34:23
  */
 
 #ifndef PROTOCOL_H
@@ -64,6 +64,23 @@ const QString SEARCH_USERS_RESPONSE = "search_users_response";
 const QString REMOVE_FRIEND = "remove_friend";
 const QString REMOVE_FRIEND_RESPONSE = "remove_friend_response";
 const QString FRIEND_REMOVED = "friend_removed";
+
+// Friend Request Messages
+const QString ADD_FRIEND_REQUEST = "add_friend_request";
+const QString ADD_FRIEND_RESPONSE = "add_friend_response";
+const QString FRIEND_REQUEST_RECEIVED = "friend_request_received";
+const QString FRIEND_REQUEST_ACCEPT = "friend_request_accept";
+const QString FRIEND_REQUEST_REJECT = "friend_request_reject";
+const QString FRIEND_REQUEST_ACCEPT_RESPONSE = "friend_request_accept_response";
+const QString FRIEND_REQUEST_REJECT_RESPONSE = "friend_request_reject_response";
+const QString GET_SENT_INVITATIONS = "get_sent_invitations";
+const QString GET_RECEIVED_INVITATIONS = "get_received_invitations";
+const QString SENT_INVITATIONS_RESPONSE = "sent_invitations_response";
+const QString RECEIVED_INVITATIONS_RESPONSE = "received_invitations_response";
+const QString CANCEL_FRIEND_REQUEST = "cancel_friend_request";
+const QString CANCEL_FRIEND_REQUEST_RESPONSE = "cancel_friend_request_response";
+
+// Invitation System Messages
 const QString SEND_INVITATION = "send_invitation";
 const QString INVITATION_RESPONSE = "invitation_response";
 const QString INVITATION_ACCEPTED = "invitation_accepted";
@@ -71,12 +88,6 @@ const QString INVITATION_REJECTED = "invitation_rejected";
 const QString INVITATION_CANCELLED = "invitation_cancelled";
 const QString GET_INVITATIONS = "get_invitations";
 const QString INVITATIONS_LIST = "invitations_list";
-const QString ADD_FRIEND_REQUEST = "add_friend_request";
-const QString ADD_FRIEND_RESPONSE = "add_friend_response";
-const QString GET_RECEIVED_INVITATIONS = "get_received_invitations";
-const QString GET_SENT_INVITATIONS = "get_sent_invitations";
-const QString RECEIVED_INVITATIONS_RESPONSE = "received_invitations_response";
-const QString SENT_INVITATIONS_RESPONSE = "sent_invitations_response";
 }
 
 // Status użytkownika
@@ -127,8 +138,19 @@ const QStringList AUTHENTICATED = {
     MessageType::REMOVE_FRIEND_RESPONSE,
     MessageType::SEARCH_USERS,
     MessageType::SEARCH_USERS_RESPONSE,
+    // Friend Request System
     MessageType::ADD_FRIEND_REQUEST,
     MessageType::ADD_FRIEND_RESPONSE,
+    MessageType::FRIEND_REQUEST_RECEIVED,
+    MessageType::FRIEND_REQUEST_ACCEPT,
+    MessageType::FRIEND_REQUEST_REJECT,
+    MessageType::FRIEND_REQUEST_ACCEPT_RESPONSE,
+    MessageType::FRIEND_REQUEST_REJECT_RESPONSE,
+    MessageType::GET_SENT_INVITATIONS,
+    MessageType::GET_RECEIVED_INVITATIONS,
+    MessageType::CANCEL_FRIEND_REQUEST,
+    MessageType::CANCEL_FRIEND_REQUEST_RESPONSE,
+    // Invitation System
     MessageType::SEND_INVITATION,
     MessageType::INVITATION_RESPONSE,
     MessageType::INVITATION_ACCEPTED,
@@ -171,6 +193,7 @@ QJsonObject createGetFriendsList();
 QJsonObject createFriendsStatusUpdate(const QJsonArray& friends);
 QJsonObject createRemoveFriendRequest(int friendId);
 QJsonObject createRemoveFriendResponse(bool success);
+QJsonObject createFriendRemovedNotification(int friendId);
 
 // Wiadomości czatu
 QJsonObject createNewMessage(const QString& content, int from, qint64 timestamp);
@@ -179,13 +202,24 @@ QJsonObject createNewMessage(const QString& content, int from, qint64 timestamp)
 QJsonObject createSearchUsersRequest(const QString& query);
 QJsonObject createSearchUsersResponse(const QJsonArray& users);
 
-QJsonObject createFriendRemovedNotification(int friendId);
+// Friend Request System
+QJsonObject createAddFriendRequest(int userId);
+QJsonObject createAddFriendResponse(bool success, const QString& message = "");
+QJsonObject createFriendRequestReceivedNotification(int fromUserId, const QString& username);
+QJsonObject createFriendRequestAccept(int requestId);
+QJsonObject createFriendRequestReject(int requestId);
+QJsonObject createFriendRequestAcceptResponse(bool success, const QString& message = "");
+QJsonObject createFriendRequestRejectResponse(bool success, const QString& message = "");
+QJsonObject createGetSentInvitationsRequest();
+QJsonObject createGetReceivedInvitationsRequest();
+QJsonObject createSentInvitationsResponse(const QJsonArray& invitations);
+QJsonObject createReceivedInvitationsResponse(const QJsonArray& invitations);
+QJsonObject createCancelFriendRequest(int requestId);
+QJsonObject createCancelFriendRequestResponse(bool success, const QString& message = "");
 
+// Invitation System
 static QJsonObject createInvitationResponse(bool success, const QString& message = "");
 static QJsonObject createInvitationsList(const QJsonArray& invitations, bool sent = true);
-
-static QJsonObject createAddFriendRequest(int userId);
-static QJsonObject createAddFriendResponse(bool success, const QString& message = "");
 
 } // namespace MessageStructure
 
@@ -217,6 +251,7 @@ inline bool isMessageAllowedInState(const QString& messageType, const QString& s
 }
 } // namespace MessageValidation
 
+// Status zaproszenia
 namespace InvitationStatus {
 const QString PENDING = "pending";
 const QString ACCEPTED = "accepted";

@@ -176,12 +176,12 @@ void ClientSession::processMessage(const QByteArray& message)
         QString newStatus = json["status"].toString();
         if (!newStatus.isEmpty() && userId > 0) {
             if (dbManager->updateUserStatus(userId, newStatus)) {
-                QJsonObject response{
+                /*QJsonObject response{
                     {"type", Protocol::MessageType::STATUS_UPDATE},
                     {"status", newStatus},
                     {"timestamp", QDateTime::currentMSecsSinceEpoch()}
                 };
-                sendResponse(QJsonDocument(response).toJson());
+                sendResponse(QJsonDocument(response).toJson());*/
                 sendFriendsStatusUpdate();
                 qDebug() << "User" << userId << "status updated to:" << newStatus;
             } else {
@@ -315,7 +315,6 @@ void ClientSession::processMessage(const QByteArray& message)
     }
     else if (type == Protocol::MessageType::ADD_FRIEND_REQUEST) {
         int targetUserId = json["user_id"].toInt();
-        qDebug() << "Processing add friend request from user" << userId << "to user" << targetUserId;
 
         if (targetUserId <= 0 || userId <= 0) {
             sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Invalid user ID")).toJson());
@@ -329,14 +328,9 @@ void ClientSession::processMessage(const QByteArray& message)
 
         // Przekazujemy żądanie do DatabaseManager
         if (dbManager->sendFriendRequest(userId, targetUserId)) {
-            QJsonObject response;
-            response["type"] = Protocol::MessageType::ADD_FRIEND_RESPONSE;
-            response["status"] = "success";
-            response["message"] = "Friend request sent successfully";
-            response["timestamp"] = QDateTime::currentMSecsSinceEpoch();
+            // Używamy tylko jednej metody tworzenia odpowiedzi - z Protocol::MessageStructure
+            QJsonObject response = Protocol::MessageStructure::createAddFriendResponse(true, "Friend request sent successfully");
             sendResponse(QJsonDocument(response).toJson());
-
-            qDebug() << "Friend request sent successfully from user" << userId << "to user" << targetUserId;
         } else {
             sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Failed to send friend request")).toJson());
             qWarning() << "Failed to send friend request from user" << userId << "to user" << targetUserId;

@@ -2,7 +2,7 @@
  * @file Protocol.cpp
  * @brief Network protocol implementation
  * @author piotrek-pl
- * @date 2025-01-24 09:10:14
+ * @date 2025-01-24 14:35:53
  */
 
 #include "Protocol.h"
@@ -10,6 +10,7 @@
 namespace Protocol {
 namespace MessageStructure {
 
+// Basic operations
 QJsonObject createLoginRequest(const QString& username, const QString& password) {
     return QJsonObject{
         {"type", MessageType::LOGIN},
@@ -63,6 +64,7 @@ QJsonObject createMessage(int receiverId, const QString& content) {
     };
 }
 
+// Ping/Pong operations
 QJsonObject createPing() {
     return QJsonObject{
         {"type", MessageType::PING},
@@ -93,6 +95,7 @@ QJsonObject createMessageAck(const QString& messageId) {
     };
 }
 
+// Status operations
 QJsonObject createStatusUpdate(const QString& status) {
     return QJsonObject{
         {"type", MessageType::STATUS_UPDATE},
@@ -101,6 +104,7 @@ QJsonObject createStatusUpdate(const QString& status) {
     };
 }
 
+// Friends list operations
 QJsonObject createGetFriendsList() {
     return QJsonObject{
         {"type", MessageType::GET_FRIENDS_LIST},
@@ -124,6 +128,7 @@ QJsonObject createMessageReadResponse() {
     };
 }
 
+// Search operations
 QJsonObject createSearchUsersRequest(const QString& query) {
     return QJsonObject{
         {"type", MessageType::SEARCH_USERS},
@@ -140,6 +145,7 @@ QJsonObject createSearchUsersResponse(const QJsonArray& users) {
     };
 }
 
+// Friend management operations
 QJsonObject createRemoveFriendRequest(int friendId) {
     return QJsonObject{
         {"type", MessageType::REMOVE_FRIEND},
@@ -164,6 +170,115 @@ QJsonObject createFriendRemovedNotification(int friendId) {
     };
 }
 
+// Friend Request System
+QJsonObject createAddFriendRequest(int userId) {
+    return QJsonObject{
+        {"type", MessageType::ADD_FRIEND_REQUEST},
+        {"user_id", userId},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
+QJsonObject createAddFriendResponse(bool success, const QString& message) {
+    return QJsonObject{
+        {"type", MessageType::ADD_FRIEND_RESPONSE},
+        {"status", success ? "success" : "error"},
+        {"message", message},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
+QJsonObject createFriendRequestReceivedNotification(int fromUserId, const QString& username) {
+    return QJsonObject{
+        {"type", MessageType::FRIEND_REQUEST_RECEIVED},
+        {"from_user_id", fromUserId},
+        {"username", username},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
+QJsonObject createFriendRequestAccept(int requestId) {
+    return QJsonObject{
+        {"type", MessageType::FRIEND_REQUEST_ACCEPT},
+        {"request_id", requestId},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
+QJsonObject createFriendRequestReject(int requestId) {
+    return QJsonObject{
+        {"type", MessageType::FRIEND_REQUEST_REJECT},
+        {"request_id", requestId},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
+QJsonObject createFriendRequestAcceptResponse(bool success, const QString& message) {
+    return QJsonObject{
+        {"type", MessageType::FRIEND_REQUEST_ACCEPT_RESPONSE},
+        {"status", success ? "success" : "error"},
+        {"message", message},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
+QJsonObject createFriendRequestRejectResponse(bool success, const QString& message) {
+    return QJsonObject{
+        {"type", MessageType::FRIEND_REQUEST_REJECT_RESPONSE},
+        {"status", success ? "success" : "error"},
+        {"message", message},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
+QJsonObject createGetSentInvitationsRequest() {
+    return QJsonObject{
+        {"type", MessageType::GET_SENT_INVITATIONS},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
+QJsonObject createGetReceivedInvitationsRequest() {
+    return QJsonObject{
+        {"type", MessageType::GET_RECEIVED_INVITATIONS},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
+QJsonObject createSentInvitationsResponse(const QJsonArray& invitations) {
+    return QJsonObject{
+        {"type", MessageType::SENT_INVITATIONS_RESPONSE},
+        {"invitations", invitations},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
+QJsonObject createReceivedInvitationsResponse(const QJsonArray& invitations) {
+    return QJsonObject{
+        {"type", MessageType::RECEIVED_INVITATIONS_RESPONSE},
+        {"invitations", invitations},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
+QJsonObject createCancelFriendRequest(int requestId) {
+    return QJsonObject{
+        {"type", MessageType::CANCEL_FRIEND_REQUEST},
+        {"request_id", requestId},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
+QJsonObject createCancelFriendRequestResponse(bool success, const QString& message) {
+    return QJsonObject{
+        {"type", MessageType::CANCEL_FRIEND_REQUEST_RESPONSE},
+        {"status", success ? "success" : "error"},
+        {"message", message},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
+// Invitation System
 QJsonObject createInvitationResponse(bool success, const QString& message) {
     QJsonObject response;
     response["type"] = MessageType::INVITATION_RESPONSE;

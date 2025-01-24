@@ -64,6 +64,13 @@ const QString SEARCH_USERS_RESPONSE = "search_users_response";
 const QString REMOVE_FRIEND = "remove_friend";
 const QString REMOVE_FRIEND_RESPONSE = "remove_friend_response";
 const QString FRIEND_REMOVED = "friend_removed";
+const QString SEND_INVITATION = "send_invitation";
+const QString INVITATION_RESPONSE = "invitation_response";
+const QString INVITATION_ACCEPTED = "invitation_accepted";
+const QString INVITATION_REJECTED = "invitation_rejected";
+const QString INVITATION_CANCELLED = "invitation_cancelled";
+const QString GET_INVITATIONS = "get_invitations";
+const QString INVITATIONS_LIST = "invitations_list";
 }
 
 // Status użytkownika
@@ -159,6 +166,9 @@ QJsonObject createSearchUsersResponse(const QJsonArray& users);
 
 QJsonObject createFriendRemovedNotification(int friendId);
 
+static QJsonObject createInvitationResponse(bool success, const QString& message = "");
+static QJsonObject createInvitationsList(const QJsonArray& invitations, bool sent = true);
+
 } // namespace MessageStructure
 
 namespace ChatHistory {
@@ -188,6 +198,13 @@ inline bool isMessageAllowedInState(const QString& messageType, const QString& s
     return false;
 }
 } // namespace MessageValidation
+
+namespace InvitationStatus {
+const QString PENDING = "pending";
+const QString ACCEPTED = "accepted";
+const QString REJECTED = "rejected";
+const QString CANCELLED = "cancelled";
+}
 
 } // namespace Protocol
 

@@ -11,6 +11,8 @@ const QString USERS = "users";
 const QString SESSIONS = "user_sessions";
 const QString FRIENDS_PREFIX = "user_%1_friends"; // %1 będzie zastąpione przez user_id
 const QString CHAT_PREFIX = "chat_%1_%2"; // %1, %2 będą ID użytkowników (mniejsze_ID_większe_ID)
+const QString SENT_INVITATIONS_PREFIX = "user_%1_sent_invitations"; // %1 będzie ID użytkownika
+const QString RECEIVED_INVITATIONS_PREFIX = "user_%1_received_invitations"; // %1 będzie ID użytkownika
 }
 
 // Zapytania do tworzenia tabel
@@ -57,6 +59,28 @@ const QString CHAT_TABLE =
 const QString CHAT_INDEXES =
     "CREATE INDEX IF NOT EXISTS idx_%1_timestamp ON %1(sent_at);"
     "CREATE INDEX IF NOT EXISTS idx_%1_unread ON %1(read_at) WHERE read_at IS NULL;";
+
+const QString SENT_INVITATIONS_TABLE =
+    "CREATE TABLE IF NOT EXISTS user_%1_sent_invitations ("
+    "request_id INT AUTO_INCREMENT PRIMARY KEY, "
+    "to_user_id INT NOT NULL, "
+    "to_username VARCHAR(32) NOT NULL, "
+    "status ENUM('pending', 'accepted', 'rejected', 'cancelled') DEFAULT 'pending', "
+    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+    "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, "
+    "FOREIGN KEY (to_user_id) REFERENCES users(id)"
+    ") ENGINE=InnoDB;";
+
+const QString RECEIVED_INVITATIONS_TABLE =
+    "CREATE TABLE IF NOT EXISTS user_%1_received_invitations ("
+    "request_id INT AUTO_INCREMENT PRIMARY KEY, "
+    "from_user_id INT NOT NULL, "
+    "from_username VARCHAR(32) NOT NULL, "
+    "status ENUM('pending', 'accepted', 'rejected', 'cancelled') DEFAULT 'pending', "
+    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+    "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, "
+    "FOREIGN KEY (from_user_id) REFERENCES users(id)"
+    ") ENGINE=InnoDB;";
 }
 
 // Zapytania związane z użytkownikami
@@ -196,6 +220,55 @@ const QString VALIDATE =
 const QString CLEANUP =
     "DELETE FROM user_sessions "
     "WHERE expires_at < CURRENT_TIMESTAMP";
+}
+
+namespace Invitations {
+// Zapytania dla wysyłającego
+const QString ADD_SENT =
+    "INSERT INTO user_%1_sent_invitations "
+    "(to_user_id, to_username) "
+    "VALUES (?, ?)";
+
+const QString UPDATE_SENT_STATUS =
+    "UPDATE user_%1_sent_invitations "
+    "SET status = ? "
+    "WHERE request_id = ?";
+
+const QString GET_SENT =
+    "SELECT request_id, to_user_id, to_username, status, created_at "
+    "FROM user_%1_sent_invitations "
+    "WHERE status = 'pending' "
+    "ORDER BY created_at DESC";
+
+// Zapytania dla otrzymującego
+const QString ADD_RECEIVED =
+    "INSERT INTO user_%1_received_invitations "
+    "(from_user_id, from_username) "
+    "VALUES (?, ?)";
+
+const QString UPDATE_RECEIVED_STATUS =
+    "UPDATE user_%1_received_invitations "
+    "SET status = ? "
+    "WHERE request_id = ?";
+
+const QString GET_RECEIVED =
+    "SELECT request_id, from_user_id, from_username, status, created_at "
+    "FROM user_%1_received_invitations "
+    "WHERE status = 'pending' "
+    "ORDER BY created_at DESC";
+
+// Zapytania sprawdzające
+const QString CHECK_PENDING =
+    "SELECT COUNT(*) FROM user_%1_sent_invitations "
+    "WHERE to_user_id = ? AND status = 'pending'";
+
+const QString GET_REQUEST_STATUS =
+    "SELECT status FROM user_%1_sent_invitations "
+    "WHERE request_id = ?";
+
+const QString CHECK_REQUEST_EXISTS =
+    "SELECT COUNT(*) FROM user_%1_received_invitations "
+    "WHERE request_id = ? AND from_user_id = ?";
 }
 
 } // namespace DatabaseQueries

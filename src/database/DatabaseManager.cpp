@@ -931,3 +931,353 @@ bool DatabaseManager::removeFriend(quint32 userId, quint32 friendId)
         return false;
     }
 }
+
+bool DatabaseManager::createInvitationTables(quint32 userId)
+{
+    if (!database.isOpen()) {
+        qWarning() << "Database is not open while creating invitation tables";
+        return false;
+    }
+
+    if (!database.transaction()) {
+        qWarning() << "Failed to start transaction for creating invitation tables";
+        return false;
+    }
+
+    try {
+        QSqlQuery query(database);
+
+        // Tworzenie tabeli wysłanych zaproszeń
+        QString sentTableQuery = DatabaseQueries::Create::SENT_INVITATIONS_TABLE.arg(userId);
+        if (!query.exec(sentTableQuery)) {
+            throw std::runtime_error("Failed to create sent invitations table: " +
+                                     query.lastError().text().toStdString());
+        }
+
+        // Tworzenie tabeli otrzymanych zaproszeń
+        QString receivedTableQuery = DatabaseQueries::Create::RECEIVED_INVITATIONS_TABLE.arg(userId);
+        if (!query.exec(receivedTableQuery)) {
+            throw std::runtime_error("Failed to create received invitations table: " +
+                                     query.lastError().text().toStdString());
+        }
+
+        if (!database.commit()) {
+            throw std::runtime_error("Failed to commit invitation tables creation");
+        }
+
+        qDebug() << "Successfully created invitation tables for user" << userId;
+        return true;
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error creating invitation tables:" << e.what();
+        database.rollback();
+        return false;
+    }
+}
+
+bool DatabaseManager::sendFriendInvitation(quint32 fromUserId, quint32 toUserId)
+{
+    if (!database.isOpen()) {
+        qWarning() << "Database is not open while sending invitation";
+        return false;
+    }
+
+    // Sprawdź czy nie są już znajomymi
+    QVector<QPair<quint32, QString>> friendsList = getFriendsList(fromUserId);
+    for (const auto& friend_ : friendsList) {
+        if (friend_.first == toUserId) {
+            qWarning() << "Users are already friends";
+            return false;
+        }
+    }
+
+    // Sprawdź czy nie ma już oczekującego zaproszenia
+    if (checkPendingInvitation(fromUserId, toUserId)) {
+        qWarning() << "Pending invitation already exists";
+        return false;
+    }
+
+    if (!database.transaction()) {
+        qWarning() << "Failed to start transaction for sending invitation";
+        return false;
+    }
+
+    try {
+        QSqlQuery query(database);
+
+        // Pobierz nazwę użytkownika docelowego
+        query.prepare(DatabaseQueries::Users::GET_USERNAME);
+        query.addBindValue(toUserId);
+        if (!query.exec() || !query.next()) {
+            throw std::runtime_error("Failed to get target username");
+        }
+        QString toUsername = query.value(0).toString();
+
+        // Dodaj wpis do tabeli wysłanych zaproszeń
+        query.prepare(DatabaseQueries::Invitations::ADD_SENT.arg(fromUserId));
+        query.addBindValue(toUserId);
+        query.addBindValue(toUsername);
+        if (!query.exec()) {
+            throw std::runtime_error("Failed to add sent invitation");
+        }
+
+        // Pobierz nazwę użytkownika wysyłającego
+        query.prepare(DatabaseQueries::Users::GET_USERNAME);
+        query.addBindValue(fromUserId);
+        if (!query.exec() || !query.next()) {
+            throw std::runtime_error("Failed to get sender username");
+        }
+        QString fromUsername = query.value(0).toString();
+
+        // Dodaj wpis do tabeli otrzymanych zaproszeń
+        query.prepare(DatabaseQueries::Invitations::ADD_RECEIVED.arg(toUserId));
+        query.addBindValue(fromUserId);
+        query.addBindValue(fromUsername);
+        if (!query.exec()) {
+            throw std::runtime_error("Failed to add received invitation");
+        }
+
+        if (!database.commit()) {
+            throw std::runtime_error("Failed to commit sending invitation");
+        }
+
+        qDebug() << "Successfully sent invitation from" << fromUserId << "to" << toUserId;
+        return true;
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error sending invitation:" << e.what();
+        database.rollback();
+        return false;
+    }
+}
+
+bool DatabaseManager::acceptFriendInvitation(quint32 userId, int requestId)
+{
+    if (!database.isOpen()) {
+        qWarning() << "Database is not open while accepting invitation";
+        return false;
+    }
+
+    if (!database.transaction()) {
+        qWarning() << "Failed to start transaction for accepting invitation";
+        return false;
+    }
+
+    try {
+        QSqlQuery query(database);
+
+        // Pobierz dane zaproszenia
+        query.prepare(DatabaseQueries::Invitations::GET_RECEIVED.arg(userId));
+        query.addBindValue(requestId);
+        if (!query.exec() || !query.next()) {
+            throw std::runtime_error("Failed to get invitation details");
+        }
+
+        quint32 fromUserId = query.value("from_user_id").toUInt();
+
+        // Aktualizuj status w obu tabelach
+        if (!updateBothInvitationStatuses(fromUserId, userId, requestId, Protocol::InvitationStatus::ACCEPTED)) {
+            throw std::runtime_error("Failed to update invitation statuses");
+        }
+
+        // Dodaj relację znajomych
+        if (!addFriend(userId, fromUserId) || !addFriend(fromUserId, userId)) {
+            throw std::runtime_error("Failed to create friend relationship");
+        }
+
+        if (!database.commit()) {
+            throw std::runtime_error("Failed to commit accepting invitation");
+        }
+
+        qDebug() << "Successfully accepted invitation" << requestId << "for user" << userId;
+        return true;
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error accepting invitation:" << e.what();
+        database.rollback();
+        return false;
+    }
+}
+
+bool DatabaseManager::rejectFriendInvitation(quint32 userId, int requestId)
+{
+    if (!database.isOpen()) {
+        qWarning() << "Database is not open while rejecting invitation";
+        return false;
+    }
+
+    if (!database.transaction()) {
+        qWarning() << "Failed to start transaction for rejecting invitation";
+        return false;
+    }
+
+    try {
+        QSqlQuery query(database);
+
+        // Pobierz dane zaproszenia
+        query.prepare(DatabaseQueries::Invitations::GET_RECEIVED.arg(userId));
+        query.addBindValue(requestId);
+        if (!query.exec() || !query.next()) {
+            throw std::runtime_error("Failed to get invitation details");
+        }
+
+        quint32 fromUserId = query.value("from_user_id").toUInt();
+
+        // Aktualizuj status w obu tabelach
+        if (!updateBothInvitationStatuses(fromUserId, userId, requestId, Protocol::InvitationStatus::REJECTED)) {
+            throw std::runtime_error("Failed to update invitation statuses");
+        }
+
+        if (!database.commit()) {
+            throw std::runtime_error("Failed to commit rejecting invitation");
+        }
+
+        qDebug() << "Successfully rejected invitation" << requestId << "for user" << userId;
+        return true;
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error rejecting invitation:" << e.what();
+        database.rollback();
+        return false;
+    }
+}
+
+bool DatabaseManager::cancelFriendInvitation(quint32 userId, int requestId)
+{
+    if (!database.isOpen()) {
+        qWarning() << "Database is not open while cancelling invitation";
+        return false;
+    }
+
+    if (!database.transaction()) {
+        qWarning() << "Failed to start transaction for cancelling invitation";
+        return false;
+    }
+
+    try {
+        QSqlQuery query(database);
+
+        // Pobierz dane zaproszenia
+        query.prepare(DatabaseQueries::Invitations::GET_SENT.arg(userId));
+        query.addBindValue(requestId);
+        if (!query.exec() || !query.next()) {
+            throw std::runtime_error("Failed to get invitation details");
+        }
+
+        quint32 toUserId = query.value("to_user_id").toUInt();
+
+        // Aktualizuj status w obu tabelach
+        if (!updateBothInvitationStatuses(userId, toUserId, requestId, Protocol::InvitationStatus::CANCELLED)) {
+            throw std::runtime_error("Failed to update invitation statuses");
+        }
+
+        if (!database.commit()) {
+            throw std::runtime_error("Failed to commit cancelling invitation");
+        }
+
+        qDebug() << "Successfully cancelled invitation" << requestId << "for user" << userId;
+        return true;
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error cancelling invitation:" << e.what();
+        database.rollback();
+        return false;
+    }
+}
+
+bool DatabaseManager::checkPendingInvitation(quint32 fromUserId, quint32 toUserId)
+{
+    if (!database.isOpen()) {
+        qWarning() << "Database is not open while checking pending invitation";
+        return false;
+    }
+
+    try {
+        QSqlQuery query(database);
+        query.prepare(DatabaseQueries::Invitations::CHECK_PENDING.arg(fromUserId));
+        query.addBindValue(toUserId);
+
+        if (!query.exec()) {
+            throw std::runtime_error("Failed to check pending invitation: " +
+                                     query.lastError().text().toStdString());
+        }
+
+        if (query.next()) {
+            return query.value(0).toInt() > 0;
+        }
+
+        return false;
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error checking pending invitation:" << e.what();
+        return false;
+    }
+}
+
+bool DatabaseManager::updateInvitationStatus(quint32 userId, int requestId,
+                                             const QString& status, bool isSender)
+{
+    if (!database.isOpen()) {
+        qWarning() << "Database is not open while updating invitation status";
+        return false;
+    }
+
+    try {
+        QSqlQuery query(database);
+        QString updateQuery = isSender ?
+                                  DatabaseQueries::Invitations::UPDATE_SENT_STATUS.arg(userId) :
+                                  DatabaseQueries::Invitations::UPDATE_RECEIVED_STATUS.arg(userId);
+
+        query.prepare(updateQuery);
+        query.addBindValue(status);
+        query.addBindValue(requestId);
+
+        if (!query.exec()) {
+            throw std::runtime_error("Failed to update invitation status: " +
+                                     query.lastError().text().toStdString());
+        }
+
+        return query.numRowsAffected() > 0;
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error updating invitation status:" << e.what();
+        return false;
+    }
+}
+
+bool DatabaseManager::updateBothInvitationStatuses(quint32 fromUserId, quint32 toUserId,
+                                                   int requestId, const QString& status)
+{
+    if (!database.isOpen()) {
+        qWarning() << "Database is not open while updating both invitation statuses";
+        return false;
+    }
+
+    if (!database.transaction()) {
+        qWarning() << "Failed to start transaction for updating invitation statuses";
+        return false;
+    }
+
+    try {
+        // Aktualizuj status w tabeli wysłanych zaproszeń
+        if (!updateInvitationStatus(fromUserId, requestId, status, true)) {
+            throw std::runtime_error("Failed to update sent invitation status");
+        }
+
+        // Aktualizuj status w tabeli otrzymanych zaproszeń
+        if (!updateInvitationStatus(toUserId, requestId, status, false)) {
+            throw std::runtime_error("Failed to update received invitation status");
+        }
+
+        if (!database.commit()) {
+            throw std::runtime_error("Failed to commit invitation status updates");
+        }
+
+        return true;
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error updating both invitation statuses:" << e.what();
+        database.rollback();
+        return false;
+    }
+}

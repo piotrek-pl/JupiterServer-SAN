@@ -23,6 +23,15 @@ struct UserSearchResult {
     QString username;
 };
 
+// Struktura reprezentująca zaproszenie do znajomych
+struct FriendInvitation {
+    int requestId;
+    quint32 userId;      // from_user_id lub to_user_id
+    QString username;     // from_username lub to_username
+    QString status;      // pending, accepted, rejected, cancelled
+    QDateTime timestamp;
+};
+
 class DatabaseManager : public QObject
 {
     Q_OBJECT
@@ -75,8 +84,17 @@ public:
     QVector<ChatMessage> getLatestMessages(quint32 userId1, quint32 userId2,
                                            int limit = Protocol::ChatHistory::MESSAGE_BATCH_SIZE);
     QVector<QJsonObject> getNewMessages(quint32 userId, qint64 lastMessageId);
-
     bool removeFriend(quint32 userId, quint32 friendId);
+
+    // Operacje na zaproszeniach
+    bool createInvitationTables(quint32 userId);
+    bool sendFriendInvitation(quint32 fromUserId, quint32 toUserId);
+    bool acceptFriendInvitation(quint32 userId, int requestId);
+    bool rejectFriendInvitation(quint32 userId, int requestId);
+    bool cancelFriendInvitation(quint32 userId, int requestId);
+    QVector<FriendInvitation> getSentInvitations(quint32 userId);
+    QVector<FriendInvitation> getReceivedInvitations(quint32 userId);
+
 private:
     // Metody pomocnicze dla użytkowników
     bool createTablesIfNotExist();
@@ -94,6 +112,11 @@ private:
     bool createChatTableIfNotExists(quint32 userId1, quint32 userId2);
     bool chatTableExists(const QString& tableName);
     void createChatIndexes(const QString& tableName);
+
+    // Metody pomocnicze dla zaproszeń
+    bool checkPendingInvitation(quint32 fromUserId, quint32 toUserId);
+    bool updateInvitationStatus(quint32 userId, int requestId, const QString& status, bool isSender);
+    bool updateBothInvitationStatuses(quint32 fromUserId, quint32 toUserId, int requestId, const QString& status);
 
     // Stałe
     static constexpr int MIN_USERNAME_LENGTH = 3;

@@ -164,5 +164,25 @@ QJsonObject createFriendRemovedNotification(int friendId) {
     };
 }
 
+QJsonObject createInvitationResponse(bool success, const QString& message) {
+    QJsonObject response;
+    response["type"] = MessageType::INVITATION_RESPONSE;
+    response["success"] = success;
+    if (!message.isEmpty()) {
+        response["message"] = message;
+    }
+    response["timestamp"] = QDateTime::currentMSecsSinceEpoch();
+    return response;
+}
+
+QJsonObject createInvitationsList(const QJsonArray& invitations, bool sent) {
+    QJsonObject response;
+    response["type"] = MessageType::INVITATIONS_LIST;
+    response["invitations"] = invitations;
+    response["sent"] = sent;
+    response["timestamp"] = QDateTime::currentMSecsSinceEpoch();
+    return response;
+}
+
 } // namespace MessageStructure
 } // namespace Protocol

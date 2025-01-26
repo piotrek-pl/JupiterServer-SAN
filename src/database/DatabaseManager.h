@@ -64,7 +64,7 @@ public:
 #endif
 
     // Operacje na użytkownikach
-    bool registerUser(const QString& username, const QString& password);
+    bool registerUser(const QString& username, const QString& password, const QString& email);
     bool authenticateUser(const QString& username, const QString& password, quint32& userId);
     bool getUserStatus(quint32 userId, QString& status);
     bool updateUserStatus(quint32 userId, const QString& status);
@@ -121,10 +121,6 @@ private:
     bool updateBothInvitationStatuses(quint32 fromUserId, quint32 toUserId, int requestId, const QString& status);
 
     // Stałe
-    static constexpr int MIN_USERNAME_LENGTH = 3;
-    static constexpr int MAX_USERNAME_LENGTH = 32;
-    static constexpr int MIN_PASSWORD_LENGTH = 8;
-    static constexpr int MAX_PASSWORD_LENGTH = 64;
     static constexpr int SALT_LENGTH = 16;
 
     static bool mainInitialized;

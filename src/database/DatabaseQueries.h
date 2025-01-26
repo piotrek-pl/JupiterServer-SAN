@@ -92,8 +92,8 @@ const QString AUTHENTICATE =
     "SELECT id, password, salt FROM users WHERE username = ?";
 
 const QString REGISTER =
-    "INSERT INTO users (username, password, salt, status) "
-    "VALUES (?, ?, ?, 'offline')";
+    "INSERT INTO users (username, password, salt, email, status) "
+    "VALUES (?, ?, ?, ?, 'offline')";
 
 // Zarządzanie statusem
 const QString UPDATE_STATUS =

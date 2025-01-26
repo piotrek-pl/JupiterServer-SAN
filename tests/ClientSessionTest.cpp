@@ -62,7 +62,7 @@ void ClientSessionTest::initTestCase()
     }
 
     // Dodanie testowego użytkownika
-    if (!dbManager->registerUser("testuser", "testpass")) {
+    if (!dbManager->registerUser("testuser", "testpass", "testuser@test.com")) {
         qDebug() << "Failed to register test user";
         QFAIL("Could not create test user");
     }

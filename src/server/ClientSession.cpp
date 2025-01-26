@@ -572,10 +572,18 @@ void ClientSession::handleRegister(const QJsonObject& json)
         return;
     }
 
-    if (dbManager->registerUser(username, password)) {
+    if (password.length() < Protocol::Validation::MIN_PASSWORD_LENGTH) {
+        sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
+                                       QString("Password must be at least %1 characters long").arg(Protocol::Validation::MIN_PASSWORD_LENGTH))).toJson());
+        return;
+    }
+
+
+    if (dbManager->registerUser(username, password, email)) {
         QJsonObject response{
             {"type", Protocol::MessageType::REGISTER_RESPONSE},
             {"status", "success"},
+            {"message", "Registration successful"},
             {"timestamp", QDateTime::currentMSecsSinceEpoch()}
         };
         sendResponse(QJsonDocument(response).toJson());

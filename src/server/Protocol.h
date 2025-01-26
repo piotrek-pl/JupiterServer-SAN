@@ -263,6 +263,13 @@ const QString REJECTED = "rejected";
 const QString CANCELLED = "cancelled";
 }
 
+namespace Validation {
+constexpr int MIN_USERNAME_LENGTH = 3;
+constexpr int MAX_USERNAME_LENGTH = 32;
+constexpr int MIN_PASSWORD_LENGTH = 8;
+constexpr int MAX_PASSWORD_LENGTH = 64;
+}
+
 } // namespace Protocol
 
 #endif // PROTOCOL_H

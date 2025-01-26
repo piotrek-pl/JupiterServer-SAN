@@ -205,7 +205,7 @@ bool DatabaseManager::authenticateUser(const QString& username, const QString& p
     }
 }
 
-bool DatabaseManager::registerUser(const QString& username, const QString& password)
+bool DatabaseManager::registerUser(const QString& username, const QString& password, const QString& email)
 {
     if (!validateUsername(username) || !validatePassword(password)) {
         return false;
@@ -218,17 +218,18 @@ bool DatabaseManager::registerUser(const QString& username, const QString& passw
 
     try {
         if (userExists(username)) {
-            throw std::runtime_error("Username already exists: " + username.toStdString());
+            throw std::runtime_error("Username already exists");
         }
 
         QString salt = generateSalt();
         QString hashedPassword = hashPassword(password + salt);
 
         QSqlQuery query(database);
-        query.prepare(DatabaseQueries::Users::REGISTER);
+        query.prepare("INSERT INTO users (username, password, salt, email, status) VALUES (?, ?, ?, ?, 'offline')");
         query.addBindValue(username);
         query.addBindValue(hashedPassword);
         query.addBindValue(salt);
+        query.addBindValue(email);
 
         if (!query.exec()) {
             throw std::runtime_error("Failed to register user: " + query.lastError().text().toStdString());
@@ -238,7 +239,6 @@ bool DatabaseManager::registerUser(const QString& username, const QString& passw
             throw std::runtime_error("Failed to commit registration");
         }
 
-        qInfo() << "User registered successfully:" << username;
         return true;
     }
     catch (const std::exception& e) {
@@ -578,7 +578,7 @@ bool DatabaseManager::verifyPassword(const QString& saltedPassword, const QStrin
 
 bool DatabaseManager::validateUsername(const QString& username)
 {
-    if (username.length() < MIN_USERNAME_LENGTH || username.length() > MAX_USERNAME_LENGTH) {
+    if (username.length() < Protocol::Validation::MIN_USERNAME_LENGTH || username.length() > Protocol::Validation::MAX_USERNAME_LENGTH) {
         return false;
     }
 
@@ -588,8 +588,8 @@ bool DatabaseManager::validateUsername(const QString& username)
 
 bool DatabaseManager::validatePassword(const QString& password)
 {
-    return password.length() >= MIN_PASSWORD_LENGTH &&
-           password.length() <= MAX_PASSWORD_LENGTH;
+    return password.length() >= Protocol::Validation::MIN_PASSWORD_LENGTH &&
+           password.length() <= Protocol::Validation::MAX_PASSWORD_LENGTH;
 }
 
 bool DatabaseManager::userExists(const QString& username)

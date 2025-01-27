@@ -97,6 +97,7 @@ public:
 
     bool sendFriendRequest(int senderId, int targetUserId);
     QString getUserUsername(quint32 userId);
+    quint32 getFriendRequestTargetUserId(quint32 userId, int requestId);
 private:
     // Metody pomocnicze dla użytkowników
     bool createTablesIfNotExist();

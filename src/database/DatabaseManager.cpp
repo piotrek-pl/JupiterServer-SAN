@@ -1457,3 +1457,27 @@ QString DatabaseManager::getUserUsername(quint32 userId) {
     }
     return QString();
 }
+
+quint32 DatabaseManager::getFriendRequestTargetUserId(quint32 userId, int requestId) {
+    if (!database.isOpen()) {
+        qWarning() << "Database is not open while getting target user ID";
+        return 0;
+    }
+
+    try {
+        QSqlQuery query(database);
+        query.prepare(DatabaseQueries::Invitations::GET_SENT.arg(userId));
+        query.addBindValue(requestId);
+
+        if (!query.exec() || !query.next()) {
+            qWarning() << "Failed to get invitation details for request ID:" << requestId;
+            return 0;
+        }
+
+        return query.value("to_user_id").toUInt();
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error getting target user ID:" << e.what();
+        return 0;
+    }
+}

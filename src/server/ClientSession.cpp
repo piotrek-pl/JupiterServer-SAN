@@ -406,34 +406,27 @@ void ClientSession::processMessage(const QByteArray& message)
             return;
         }
 
+        // Pobierz ID użytkownika docelowego przed anulowaniem
+        quint32 targetUserId = dbManager->getFriendRequestTargetUserId(userId, requestId);
+
         if (dbManager->cancelFriendInvitation(userId, requestId)) {
-            // Najpierw wysyłamy potwierdzenie anulowania
+            // Wyślij potwierdzenie do użytkownika anulującego
             QJsonObject response = Protocol::MessageStructure::createCancelFriendRequestResponse(
                 true, "Friend request cancelled successfully");
             sendResponse(QJsonDocument(response).toJson());
 
-            // Następnie odświeżamy listę wysłanych zaproszeń
-            auto invitations = dbManager->getSentInvitations(userId);
-            QJsonArray invitationsArray;
-
-            for (const auto& invitation : invitations) {
-                QJsonObject invObj;
-                invObj["request_id"] = invitation.requestId;
-                invObj["user_id"] = QString::number(invitation.userId);
-                invObj["username"] = invitation.username;
-                invObj["status"] = invitation.status;
-                invObj["timestamp"] = invitation.timestamp.toMSecsSinceEpoch();
-                invitationsArray.append(invObj);
+            // Wyślij powiadomienie do użytkownika docelowego jeśli jest online
+            if (targetUserId > 0) {
+                ClientSession* targetSession = ActiveSessions::getInstance().getSession(targetUserId);
+                if (targetSession) {
+                    QJsonObject notification = Protocol::MessageStructure::createFriendRequestCancelledNotification(
+                        requestId, userId);
+                    targetSession->sendResponse(QJsonDocument(notification).toJson());
+                }
             }
 
-            QJsonObject updateResponse{
-                {"type", Protocol::MessageType::SENT_INVITATIONS_RESPONSE},
-                {"invitations", invitationsArray},
-                {"timestamp", QDateTime::currentMSecsSinceEpoch()}
-            };
-
-            qDebug() << "Successfully cancelled friend request" << requestId << "for user" << userId;
-            sendResponse(QJsonDocument(updateResponse).toJson());
+            qDebug() << "Successfully cancelled friend request" << requestId
+                     << "from user" << userId << "to user" << targetUserId;
         } else {
             sendResponse(QJsonDocument(Protocol::MessageStructure::createCancelFriendRequestResponse(
                                            false, "Failed to cancel friend request")).toJson());

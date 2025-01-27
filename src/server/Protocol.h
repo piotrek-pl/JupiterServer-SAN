@@ -80,6 +80,7 @@ const QString SENT_INVITATIONS_RESPONSE = "sent_invitations_response";
 const QString RECEIVED_INVITATIONS_RESPONSE = "received_invitations_response";
 const QString CANCEL_FRIEND_REQUEST = "cancel_friend_request";
 const QString CANCEL_FRIEND_REQUEST_RESPONSE = "cancel_friend_request_response";
+const QString FRIEND_REQUEST_CANCELLED_NOTIFICATION = "friend_request_cancelled_notification";
 
 // Invitation System Messages
 const QString SEND_INVITATION = "send_invitation";
@@ -220,6 +221,7 @@ QJsonObject createReceivedInvitationsResponse(const QJsonArray& invitations);
 QJsonObject createCancelFriendRequest(int requestId);
 QJsonObject createCancelFriendRequestResponse(bool success, const QString& message = "");
 QJsonObject createFriendRequestAcceptedNotification(int userId, const QString& username);
+QJsonObject createFriendRequestCancelledNotification(int requestId, int fromUserId);
 
 // Invitation System
 static QJsonObject createInvitationResponse(bool success, const QString& message = "");

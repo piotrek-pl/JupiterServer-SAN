@@ -1,6 +1,6 @@
 #include "DatabaseManager.h"
 #include "DatabaseQueries.h"
-#include "server/Protocol.h"
+#include "network/Protocol.h"
 #include <QCryptographicHash>
 #include <QDateTime>
 #include <QRandomGenerator>

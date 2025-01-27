@@ -7,7 +7,7 @@
 #include <QPair>
 #include <QVector>
 #include <QDateTime>
-#include "server/Protocol.h"
+#include "network/Protocol.h"
 
 // Struktura reprezentująca wiadomość w chacie
 struct ChatMessage {

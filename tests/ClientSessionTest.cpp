@@ -7,7 +7,7 @@
 
 #include "ClientSessionTest.h"
 #include "TestDatabaseQueries.h"
-#include "server/Protocol.h"
+#include "network/Protocol.h"
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSignalSpy>

@@ -6,7 +6,7 @@
  */
 
 #include "ProtocolTest.h"
-#include "server/Protocol.h"
+#include "network/Protocol.h"
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QDebug>

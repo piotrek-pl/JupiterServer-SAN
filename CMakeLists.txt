@@ -34,24 +34,24 @@ set(PROJECT_SOURCES
     src/main.cpp
     src/server/Server.cpp
     src/server/ClientSession.cpp
-    src/server/Protocol.cpp
     src/database/DatabaseManager.cpp
     src/database/DatabaseQueries.cpp
     src/models/User.cpp
     src/models/Message.cpp
     src/network/NotificationManager.cpp
+    src/network/Protocol.cpp
 )
 
 # Definiujemy pliki nagłówkowe
 set(PROJECT_HEADERS
     src/server/Server.h
     src/server/ClientSession.h
-    src/server/Protocol.h
     src/database/DatabaseManager.h
     src/database/DatabaseQueries.h
     src/models/User.h
     src/models/Message.h
     src/network/NotificationManager.h
+    src/network/Protocol.h
 )
 
 # Konfiguracja plików zasobów
@@ -115,8 +115,8 @@ if(BUILD_TESTS)
         tests/ClientSessionTest.cpp
         tests/TestSocket.cpp
         tests/TestDatabaseQueries.cpp
-        # Dodajemy potrzebne pliki źródłowe z projektu
-        src/server/Protocol.cpp
+        # Zmieniamy ścieżkę z src/server/Protocol.cpp na src/network/Protocol.cpp
+        src/network/Protocol.cpp
         src/server/ClientSession.cpp
         src/database/DatabaseManager.cpp
     )

@@ -351,4 +351,4 @@ D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/
   C:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/vadefs.h \
   C:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/wchar.h \
   D:/programowanie/Qt/SAN/JupiterServer/src/database/DatabaseManager.h \
-  D:/programowanie/Qt/SAN/JupiterServer/src/server/Protocol.h
+  D:/programowanie/Qt/SAN/JupiterServer/src/network/Protocol.h

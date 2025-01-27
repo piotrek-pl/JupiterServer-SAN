@@ -7,7 +7,7 @@
 
 #include "ClientSession.h"
 #include "database/DatabaseManager.h"
-#include "Protocol.h"
+#include "network/Protocol.h"
 #include "ActiveSessions.h"
 #include <QDebug>
 #include <QJsonDocument>

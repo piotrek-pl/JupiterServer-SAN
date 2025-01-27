@@ -111,9 +111,9 @@ bool DatabaseManager::createTablesIfNotExist()
             throw std::runtime_error("Failed to create users table: " + query.lastError().text().toStdString());
         }
 
-        if (!query.exec(DatabaseQueries::Create::SESSIONS_TABLE)) {
+        /*if (!query.exec(DatabaseQueries::Create::SESSIONS_TABLE)) {
             throw std::runtime_error("Failed to create sessions table: " + query.lastError().text().toStdString());
-        }
+        }*/
 
         if (!database.commit()) {
             throw std::runtime_error("Failed to commit table creation");
@@ -207,6 +207,7 @@ bool DatabaseManager::authenticateUser(const QString& username, const QString& p
 
 bool DatabaseManager::registerUser(const QString& username, const QString& password, const QString& email)
 {
+    // Walidacja username i hasła
     if (!validateUsername(username) || !validatePassword(password)) {
         return false;
     }
@@ -217,14 +218,17 @@ bool DatabaseManager::registerUser(const QString& username, const QString& passw
     }
 
     try {
+        // Sprawdzenie czy użytkownik już istnieje
         if (userExists(username)) {
             throw std::runtime_error("Username already exists");
         }
 
+        // Generowanie soli i hashowanie hasła
         QString salt = generateSalt();
         QString hashedPassword = hashPassword(password + salt);
 
         QSqlQuery query(database);
+        // Dodanie nowego użytkownika do bazy
         query.prepare("INSERT INTO users (username, password, salt, email, status) VALUES (?, ?, ?, ?, 'offline')");
         query.addBindValue(username);
         query.addBindValue(hashedPassword);
@@ -235,10 +239,24 @@ bool DatabaseManager::registerUser(const QString& username, const QString& passw
             throw std::runtime_error("Failed to register user: " + query.lastError().text().toStdString());
         }
 
+        // Pobierz ID nowo utworzonego użytkownika
+        quint32 userId = query.lastInsertId().toUInt();
+
+        // Utwórz tabelę przyjaciół dla nowego użytkownika
+        if (!createFriendsList(userId)) {
+            throw std::runtime_error("Failed to create friends list table");
+        }
+
+        // Utwórz tabele zaproszeń dla nowego użytkownika
+        if (!createInvitationTables(userId)) {
+            throw std::runtime_error("Failed to create invitation tables");
+        }
+
         if (!database.commit()) {
             throw std::runtime_error("Failed to commit registration");
         }
 
+        qDebug() << "Successfully registered user:" << username << "with ID:" << userId;
         return true;
     }
     catch (const std::exception& e) {

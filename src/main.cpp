@@ -78,9 +78,9 @@ void fillTestData(DatabaseManager* db) {
         if (!query.exec("DROP TABLE IF EXISTS user_6_friends")) {
             qDebug() << "Drop friends table error:" << query.lastError().text();
         }
-        if (!query.exec("DELETE FROM user_sessions")) {
+        /*if (!query.exec("DELETE FROM user_sessions")) {
             qDebug() << "Clean sessions error:" << query.lastError().text();
-        }
+        }*/
         if (!query.exec("DELETE FROM users")) {
             qDebug() << "Clean users error:" << query.lastError().text();
         }

@@ -545,10 +545,6 @@ JupiterServer_autogen/timestamp: \
 	D:/programowanie/Qt/SAN/JupiterServer/src/database/DatabaseQueries.cpp \
 	D:/programowanie/Qt/SAN/JupiterServer/src/database/DatabaseQueries.h \
 	D:/programowanie/Qt/SAN/JupiterServer/src/main.cpp \
-	D:/programowanie/Qt/SAN/JupiterServer/src/models/Message.cpp \
-	D:/programowanie/Qt/SAN/JupiterServer/src/models/Message.h \
-	D:/programowanie/Qt/SAN/JupiterServer/src/models/User.cpp \
-	D:/programowanie/Qt/SAN/JupiterServer/src/models/User.h \
 	D:/programowanie/Qt/SAN/JupiterServer/src/network/NotificationManager.cpp \
 	D:/programowanie/Qt/SAN/JupiterServer/src/network/NotificationManager.h \
 	D:/programowanie/Qt/SAN/JupiterServer/src/network/Protocol.cpp \

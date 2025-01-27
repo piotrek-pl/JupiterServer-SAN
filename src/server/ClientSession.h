@@ -46,6 +46,19 @@ private:
     void handleSendMessage(const QJsonObject& json);
     void processBuffer();
     void sendUnreadFromUsers();
+    void handleStatusUpdate(const QJsonObject& json);
+    void handleSearchUsers(const QJsonObject& json);
+    void handleRemoveFriend(const QJsonObject& json);
+    void handleGetLatestMessages(const QJsonObject& json);
+    void handleGetChatHistory(const QJsonObject& json);
+    void handleGetMoreHistory(const QJsonObject& json);
+    void handleMessageRead(const QJsonObject& json);
+    void handleAddFriendRequest(const QJsonObject& json);
+    void handleGetReceivedInvitations();
+    void handleGetSentInvitations();
+    void handleCancelFriendRequest(const QJsonObject& json);
+    void handleFriendRequestAccept(const QJsonObject& json);
+    void handleFriendRequestReject(const QJsonObject& json);
 
     void setUserId(quint32 id);
 

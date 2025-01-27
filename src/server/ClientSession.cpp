@@ -173,326 +173,46 @@ void ClientSession::processMessage(const QByteArray& message)
         handleStatusRequest();
     }
     else if (type == Protocol::MessageType::STATUS_UPDATE) {
-        QString newStatus = json["status"].toString();
-        if (!newStatus.isEmpty() && userId > 0) {
-            if (dbManager->updateUserStatus(userId, newStatus)) {
-                /*QJsonObject response{
-                    {"type", Protocol::MessageType::STATUS_UPDATE},
-                    {"status", newStatus},
-                    {"timestamp", QDateTime::currentMSecsSinceEpoch()}
-                };
-                sendResponse(QJsonDocument(response).toJson());*/
-                sendFriendsStatusUpdate();
-                qDebug() << "User" << userId << "status updated to:" << newStatus;
-            } else {
-                sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Failed to update status")).toJson());
-                qWarning() << "Failed to update status for user" << userId;
-            }
-        } else {
-            sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Invalid status update data")).toJson());
-            qWarning() << "Invalid status update request received";
-        }
+        handleStatusUpdate(json);
     }
     else if (type == Protocol::MessageType::SEARCH_USERS) {
-        QString searchQuery = json["query"].toString();
-        qDebug() << "Processing search users request with query:" << searchQuery;
-
-        if (!searchQuery.isEmpty()) {
-            auto results = dbManager->searchUsers(searchQuery, userId);
-
-            QJsonArray usersArray;
-            for (const auto& result : results) {
-                QJsonObject userObj;
-                userObj["id"] = QString::number(result.id);
-                userObj["username"] = result.username;
-                usersArray.append(userObj);
-            }
-
-            QJsonObject response{
-                {"type", Protocol::MessageType::SEARCH_USERS_RESPONSE},
-                {"users", usersArray},
-                {"timestamp", QDateTime::currentMSecsSinceEpoch()}
-            };
-
-            qDebug() << "Sending search response with" << usersArray.size() << "results";
-            sendResponse(QJsonDocument(response).toJson());
-        } else {
-            qWarning() << "Received empty search query";
-            sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Empty search query")).toJson());
-        }
+        handleSearchUsers(json);
     }
     else if (type == Protocol::MessageType::REMOVE_FRIEND) {
-        quint32 friendId = json["friend_id"].toInt();
-
-        if (friendId > 0 && userId > 0) {
-            if (dbManager->removeFriend(userId, friendId)) {
-                // Najpierw znajdujemy sesję znajomego
-                ClientSession* friendSession = ActiveSessions::getInstance().getSession(friendId);
-
-                // Najpierw wysyłamy obu użytkownikom odświeżenie listy
-                handleFriendsListRequest();  // Dla inicjatora
-
-                if (friendSession) {
-                    friendSession->handleFriendsListRequest(); // Dla usuniętego znajomego
-                }
-
-                // Potem wysyłamy potwierdzenia
-                QJsonObject response = Protocol::MessageStructure::createRemoveFriendResponse(true);
-                sendResponse(QJsonDocument(response).toJson());
-
-                if (friendSession) {
-                    QJsonObject friendRemovedNotification = Protocol::MessageStructure::createFriendRemovedNotification(userId);
-                    friendSession->sendResponse(QJsonDocument(friendRemovedNotification).toJson());
-                }
-
-                qDebug() << "Successfully removed friend" << friendId << "for user" << userId;
-            } else {
-                QJsonObject response = Protocol::MessageStructure::createRemoveFriendResponse(false);
-                sendResponse(QJsonDocument(response).toJson());
-                qWarning() << "Failed to remove friend" << friendId << "for user" << userId;
-            }
-        } else {
-            sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
-                                           "Invalid friend removal request")).toJson());
-            qWarning() << "Invalid friend removal request received";
-        }
+        handleRemoveFriend(json);
     }
     else if (type == Protocol::MessageType::GET_LATEST_MESSAGES) {
-        quint32 friendId = json["friend_id"].toInt();
-        int limit = json["limit"].toInt(Protocol::ChatHistory::MESSAGE_BATCH_SIZE);
-
-        messages = dbManager->getLatestMessages(userId, friendId, limit);
-        bool hasMore = dbManager->hasMoreHistory(userId, friendId, 0);
-
-        QJsonObject response = prepareMessagesResponse();
-        response["type"] = Protocol::MessageType::LATEST_MESSAGES_RESPONSE;
-        response["has_more"] = hasMore;
-        response["offset"] = messages.size();
-        sendResponse(QJsonDocument(response).toJson());
+        handleGetLatestMessages(json);
     }
     else if (type == Protocol::MessageType::GET_CHAT_HISTORY) {
-        quint32 friendId = json["friend_id"].toInt();
-        int offset = json["offset"].toInt(0);
-
-        messages = dbManager->getChatHistory(userId, friendId, offset);
-        bool hasMore = dbManager->hasMoreHistory(userId, friendId, offset);
-
-        QJsonObject response = prepareMessagesResponse();
-        response["has_more"] = hasMore;
-        response["offset"] = offset;
-        sendResponse(QJsonDocument(response).toJson());
+        handleGetChatHistory(json);
     }
     else if (type == Protocol::MessageType::GET_MORE_HISTORY) {
-        quint32 friendId = json["friend_id"].toInt();
-        int offset = json["offset"].toInt(0);
-
-        messages = dbManager->getChatHistory(userId, friendId, offset);
-        bool hasMore = dbManager->hasMoreHistory(userId, friendId, offset);
-
-        QJsonObject response = prepareMessagesResponse();
-        response["type"] = Protocol::MessageType::MORE_HISTORY_RESPONSE;
-        response["has_more"] = hasMore;
-        response["offset"] = offset;
-        sendResponse(QJsonDocument(response).toJson());
+        handleGetMoreHistory(json);
     }
     else if (type == Protocol::MessageType::SEND_MESSAGE) {
         handleSendMessage(json);
     }
     else if (type == Protocol::MessageType::MESSAGE_READ) {
-        quint32 friendId = json["friendId"].toInt();
-        if (friendId > 0 && userId > 0) {
-            if (dbManager->markChatAsRead(userId, friendId)) {
-                sendResponse(QJsonDocument(Protocol::MessageStructure::createMessageReadResponse()).toJson());
-                qDebug() << "Messages from user" << friendId << "marked as read for user" << userId;
-            } else {
-                sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Failed to mark messages as read")).toJson());
-                qWarning() << "Failed to mark messages as read from user" << friendId << "for user" << userId;
-            }
-        } else {
-            sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Invalid message read request")).toJson());
-            qWarning() << "Invalid message read request received";
-        }
+        handleMessageRead(json);
     }
     else if (type == Protocol::MessageType::ADD_FRIEND_REQUEST) {
-        int targetUserId = json["user_id"].toInt();
-
-        if (targetUserId <= 0 || userId <= 0) {
-            sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Invalid user ID")).toJson());
-            return;
-        }
-
-        if (targetUserId == userId) {
-            sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Cannot send friend request to yourself")).toJson());
-            return;
-        }
-
-        // Próbujemy wysłać zaproszenie
-        if (dbManager->sendFriendRequest(userId, targetUserId)) {
-            QJsonObject response = Protocol::MessageStructure::createAddFriendResponse(true, "Friend request sent successfully");
-            sendResponse(QJsonDocument(response).toJson());
-            qDebug() << "Friend request sent successfully from user" << userId << "to user" << targetUserId;
-        } else {
-            // Sprawdzamy czy błąd wynika z istniejącego zaproszenia
-            QString targetUsername = dbManager->getUserUsername(targetUserId);
-
-            // Wysyłamy specjalną odpowiedź INVITATION_ALREADY_EXISTS
-            QJsonObject response{
-                {"type", Protocol::MessageType::INVITATION_ALREADY_EXISTS},
-                {"user_id", targetUserId},
-                {"username", targetUsername},
-                {"status", "error"},
-                {"error_code", "INVITATION_ALREADY_EXISTS"},
-                {"message", "Invitation already sent to this user"},
-                {"timestamp", QDateTime::currentMSecsSinceEpoch()}
-            };
-
-            sendResponse(QJsonDocument(response).toJson());
-            qDebug() << "Error sending friend request: Friend request already sent";
-        }
+        handleAddFriendRequest(json);
     }
     else if (type == Protocol::MessageType::GET_RECEIVED_INVITATIONS) {
-        auto invitations = dbManager->getReceivedInvitations(userId);
-        QJsonArray invitationsArray;
-
-        for (const auto& invitation : invitations) {
-            QJsonObject invObj;
-            invObj["request_id"] = invitation.requestId;
-            invObj["user_id"] = QString::number(invitation.userId);
-            invObj["username"] = invitation.username;
-            invObj["status"] = invitation.status;
-            invObj["timestamp"] = invitation.timestamp.toMSecsSinceEpoch();
-            invitationsArray.append(invObj);
-        }
-
-        QJsonObject response{
-            {"type", Protocol::MessageType::RECEIVED_INVITATIONS_RESPONSE},
-            {"invitations", invitationsArray},
-            {"timestamp", QDateTime::currentMSecsSinceEpoch()}
-        };
-
-        qDebug() << "Sending received invitations response with" << invitationsArray.size() << "invitations";
-        sendResponse(QJsonDocument(response).toJson());
+        handleGetReceivedInvitations();
     }
     else if (type == Protocol::MessageType::GET_SENT_INVITATIONS) {
-        auto invitations = dbManager->getSentInvitations(userId);
-        QJsonArray invitationsArray;
-
-        for (const auto& invitation : invitations) {
-            QJsonObject invObj;
-            invObj["request_id"] = invitation.requestId;
-            invObj["user_id"] = QString::number(invitation.userId);
-            invObj["username"] = invitation.username;
-            invObj["status"] = invitation.status;
-            invObj["timestamp"] = invitation.timestamp.toMSecsSinceEpoch();
-            invitationsArray.append(invObj);
-        }
-
-        QJsonObject response{
-            {"type", Protocol::MessageType::SENT_INVITATIONS_RESPONSE},
-            {"invitations", invitationsArray},
-            {"timestamp", QDateTime::currentMSecsSinceEpoch()}
-        };
-
-        qDebug() << "Sending sent invitations response with" << invitationsArray.size() << "invitations";
-        sendResponse(QJsonDocument(response).toJson());
+        handleGetSentInvitations();
     }
     else if (type == Protocol::MessageType::CANCEL_FRIEND_REQUEST) {
-        int requestId = json["request_id"].toInt();
-
-        if (requestId <= 0 || userId <= 0) {
-            sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
-                                           "Invalid request ID")).toJson());
-            qWarning() << "Invalid cancel friend request received - requestId:" << requestId;
-            return;
-        }
-
-        // Pobierz ID użytkownika docelowego przed anulowaniem
-        quint32 targetUserId = dbManager->getFriendRequestTargetUserId(userId, requestId);
-
-        if (dbManager->cancelFriendInvitation(userId, requestId)) {
-            // Wyślij potwierdzenie do użytkownika anulującego
-            QJsonObject response = Protocol::MessageStructure::createCancelFriendRequestResponse(
-                true, "Friend request cancelled successfully");
-            sendResponse(QJsonDocument(response).toJson());
-
-            // Wyślij powiadomienie do użytkownika docelowego jeśli jest online
-            if (targetUserId > 0) {
-                ClientSession* targetSession = ActiveSessions::getInstance().getSession(targetUserId);
-                if (targetSession) {
-                    QJsonObject notification = Protocol::MessageStructure::createFriendRequestCancelledNotification(
-                        requestId, userId);
-                    targetSession->sendResponse(QJsonDocument(notification).toJson());
-                }
-            }
-
-            qDebug() << "Successfully cancelled friend request" << requestId
-                     << "from user" << userId << "to user" << targetUserId;
-        } else {
-            sendResponse(QJsonDocument(Protocol::MessageStructure::createCancelFriendRequestResponse(
-                                           false, "Failed to cancel friend request")).toJson());
-            qWarning() << "Failed to cancel friend request" << requestId << "for user" << userId;
-        }
+        handleCancelFriendRequest(json);
     }
     else if (type == Protocol::MessageType::FRIEND_REQUEST_ACCEPT) {
-        int requestId = json["request_id"].toInt();
-
-        if (requestId <= 0 || userId <= 0) {
-            sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
-                                           "Invalid request ID")).toJson());
-            return;
-        }
-
-        if (dbManager->acceptFriendInvitation(userId, requestId)) {
-            // Wysyłamy odpowiedź do akceptującego
-            QJsonObject response = Protocol::MessageStructure::createFriendRequestAcceptResponse(
-                true, "Friend request accepted successfully");
-            sendResponse(QJsonDocument(response).toJson());
-
-            // Pobieramy dane o zaproszeniu, żeby znać ID drugiego użytkownika
-            auto invitations = dbManager->getReceivedInvitations(userId);
-            for (const auto& inv : invitations) {
-                if (inv.requestId == requestId) {
-                    // Znajdujemy sesję drugiego użytkownika
-                    ClientSession* otherUserSession = ActiveSessions::getInstance().getSession(inv.userId);
-                    if (otherUserSession) {
-                        // Wysyłamy powiadomienie do drugiego użytkownika
-                        QJsonObject notification = Protocol::MessageStructure::createFriendRequestAcceptedNotification(
-                            userId,  // ID użytkownika który zaakceptował
-                            dbManager->getUserUsername(userId)  // nazwa użytkownika który zaakceptował
-                            );
-                        otherUserSession->sendResponse(QJsonDocument(notification).toJson());
-
-                        // Odświeżamy listę znajomych dla drugiego użytkownika
-                        otherUserSession->handleFriendsListRequest();
-                    }
-                    break;
-                }
-            }
-
-            // Odświeżamy listę znajomych dla akceptującego
-            handleFriendsListRequest();
-        } else {
-            sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
-                                           "Failed to accept friend request")).toJson());
-        }
+        handleFriendRequestAccept(json);
     }
     else if (type == Protocol::MessageType::FRIEND_REQUEST_REJECT) {
-        int requestId = json["request_id"].toInt();
-
-        if (requestId <= 0 || userId <= 0) {
-            sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
-                                           "Invalid request ID")).toJson());
-            return;
-        }
-
-        if (dbManager->rejectFriendInvitation(userId, requestId)) {
-            QJsonObject response = Protocol::MessageStructure::createFriendRequestRejectResponse(
-                true, "Friend request rejected successfully");
-            sendResponse(QJsonDocument(response).toJson());
-        } else {
-            sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
-                                           "Failed to reject friend request")).toJson());
-        }
+        handleFriendRequestReject(json);
     }
     else if (type == Protocol::MessageType::LOGOUT) {
         handleLogout();
@@ -837,4 +557,314 @@ void ClientSession::sendUnreadFromUsers()
 
     qDebug() << "Sending unread_from response:" << QJsonDocument(response).toJson();
     sendResponse(QJsonDocument(response).toJson());
+}
+
+void ClientSession::handleStatusUpdate(const QJsonObject& json) {
+    QString newStatus = json["status"].toString();
+    if (!newStatus.isEmpty() && userId > 0) {
+        if (dbManager->updateUserStatus(userId, newStatus)) {
+            sendFriendsStatusUpdate();
+            qDebug() << "User" << userId << "status updated to:" << newStatus;
+        } else {
+            sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Failed to update status")).toJson());
+            qWarning() << "Failed to update status for user" << userId;
+        }
+    } else {
+        sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Invalid status update data")).toJson());
+        qWarning() << "Invalid status update request received";
+    }
+}
+
+void ClientSession::handleSearchUsers(const QJsonObject& json) {
+    QString searchQuery = json["query"].toString();
+    qDebug() << "Processing search users request with query:" << searchQuery;
+
+    if (!searchQuery.isEmpty()) {
+        auto results = dbManager->searchUsers(searchQuery, userId);
+
+        QJsonArray usersArray;
+        for (const auto& result : results) {
+            QJsonObject userObj;
+            userObj["id"] = QString::number(result.id);
+            userObj["username"] = result.username;
+            usersArray.append(userObj);
+        }
+
+        QJsonObject response{
+            {"type", Protocol::MessageType::SEARCH_USERS_RESPONSE},
+            {"users", usersArray},
+            {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+        };
+
+        qDebug() << "Sending search response with" << usersArray.size() << "results";
+        sendResponse(QJsonDocument(response).toJson());
+    } else {
+        qWarning() << "Received empty search query";
+        sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Empty search query")).toJson());
+    }
+}
+
+void ClientSession::handleRemoveFriend(const QJsonObject& json) {
+    quint32 friendId = json["friend_id"].toInt();
+
+    if (friendId > 0 && userId > 0) {
+        if (dbManager->removeFriend(userId, friendId)) {
+            ClientSession* friendSession = ActiveSessions::getInstance().getSession(friendId);
+
+            handleFriendsListRequest();  // Dla inicjatora
+
+            if (friendSession) {
+                friendSession->handleFriendsListRequest(); // Dla usuniętego znajomego
+            }
+
+            QJsonObject response = Protocol::MessageStructure::createRemoveFriendResponse(true);
+            sendResponse(QJsonDocument(response).toJson());
+
+            if (friendSession) {
+                QJsonObject friendRemovedNotification = Protocol::MessageStructure::createFriendRemovedNotification(userId);
+                friendSession->sendResponse(QJsonDocument(friendRemovedNotification).toJson());
+            }
+
+            qDebug() << "Successfully removed friend" << friendId << "for user" << userId;
+        } else {
+            QJsonObject response = Protocol::MessageStructure::createRemoveFriendResponse(false);
+            sendResponse(QJsonDocument(response).toJson());
+            qWarning() << "Failed to remove friend" << friendId << "for user" << userId;
+        }
+    } else {
+        sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
+                                       "Invalid friend removal request")).toJson());
+        qWarning() << "Invalid friend removal request received";
+    }
+}
+
+void ClientSession::handleGetLatestMessages(const QJsonObject& json) {
+    quint32 friendId = json["friend_id"].toInt();
+    int limit = json["limit"].toInt(Protocol::ChatHistory::MESSAGE_BATCH_SIZE);
+
+    messages = dbManager->getLatestMessages(userId, friendId, limit);
+    bool hasMore = dbManager->hasMoreHistory(userId, friendId, 0);
+
+    QJsonObject response = prepareMessagesResponse();
+    response["type"] = Protocol::MessageType::LATEST_MESSAGES_RESPONSE;
+    response["has_more"] = hasMore;
+    response["offset"] = messages.size();
+    sendResponse(QJsonDocument(response).toJson());
+}
+
+void ClientSession::handleGetChatHistory(const QJsonObject& json) {
+    quint32 friendId = json["friend_id"].toInt();
+    int offset = json["offset"].toInt(0);
+
+    messages = dbManager->getChatHistory(userId, friendId, offset);
+    bool hasMore = dbManager->hasMoreHistory(userId, friendId, offset);
+
+    QJsonObject response = prepareMessagesResponse();
+    response["has_more"] = hasMore;
+    response["offset"] = offset;
+    sendResponse(QJsonDocument(response).toJson());
+}
+
+void ClientSession::handleGetMoreHistory(const QJsonObject& json) {
+    quint32 friendId = json["friend_id"].toInt();
+    int offset = json["offset"].toInt(0);
+
+    messages = dbManager->getChatHistory(userId, friendId, offset);
+    bool hasMore = dbManager->hasMoreHistory(userId, friendId, offset);
+
+    QJsonObject response = prepareMessagesResponse();
+    response["type"] = Protocol::MessageType::MORE_HISTORY_RESPONSE;
+    response["has_more"] = hasMore;
+    response["offset"] = offset;
+    sendResponse(QJsonDocument(response).toJson());
+}
+
+void ClientSession::handleMessageRead(const QJsonObject& json) {
+    quint32 friendId = json["friendId"].toInt();
+    if (friendId > 0 && userId > 0) {
+        if (dbManager->markChatAsRead(userId, friendId)) {
+            sendResponse(QJsonDocument(Protocol::MessageStructure::createMessageReadResponse()).toJson());
+            qDebug() << "Messages from user" << friendId << "marked as read for user" << userId;
+        } else {
+            sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Failed to mark messages as read")).toJson());
+            qWarning() << "Failed to mark messages as read from user" << friendId << "for user" << userId;
+        }
+    } else {
+        sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Invalid message read request")).toJson());
+        qWarning() << "Invalid message read request received";
+    }
+}
+
+void ClientSession::handleAddFriendRequest(const QJsonObject& json) {
+    int targetUserId = json["user_id"].toInt();
+
+    if (targetUserId <= 0 || userId <= 0) {
+        sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Invalid user ID")).toJson());
+        return;
+    }
+
+    if (targetUserId == userId) {
+        sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Cannot send friend request to yourself")).toJson());
+        return;
+    }
+
+    if (dbManager->sendFriendRequest(userId, targetUserId)) {
+        QJsonObject response = Protocol::MessageStructure::createAddFriendResponse(true, "Friend request sent successfully");
+        sendResponse(QJsonDocument(response).toJson());
+        qDebug() << "Friend request sent successfully from user" << userId << "to user" << targetUserId;
+    } else {
+        QString targetUsername = dbManager->getUserUsername(targetUserId);
+
+        QJsonObject response{
+            {"type", Protocol::MessageType::INVITATION_ALREADY_EXISTS},
+            {"user_id", targetUserId},
+            {"username", targetUsername},
+            {"status", "error"},
+            {"error_code", "INVITATION_ALREADY_EXISTS"},
+            {"message", "Invitation already sent to this user"},
+            {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+        };
+
+        sendResponse(QJsonDocument(response).toJson());
+        qDebug() << "Error sending friend request: Friend request already sent";
+    }
+}
+
+void ClientSession::handleGetReceivedInvitations() {
+    auto invitations = dbManager->getReceivedInvitations(userId);
+    QJsonArray invitationsArray;
+
+    for (const auto& invitation : invitations) {
+        QJsonObject invObj;
+        invObj["request_id"] = invitation.requestId;
+        invObj["user_id"] = QString::number(invitation.userId);
+        invObj["username"] = invitation.username;
+        invObj["status"] = invitation.status;
+        invObj["timestamp"] = invitation.timestamp.toMSecsSinceEpoch();
+        invitationsArray.append(invObj);
+    }
+
+    QJsonObject response{
+        {"type", Protocol::MessageType::RECEIVED_INVITATIONS_RESPONSE},
+        {"invitations", invitationsArray},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+
+    qDebug() << "Sending received invitations response with" << invitationsArray.size() << "invitations";
+    sendResponse(QJsonDocument(response).toJson());
+}
+
+void ClientSession::handleGetSentInvitations() {
+    auto invitations = dbManager->getSentInvitations(userId);
+    QJsonArray invitationsArray;
+
+    for (const auto& invitation : invitations) {
+        QJsonObject invObj;
+        invObj["request_id"] = invitation.requestId;
+        invObj["user_id"] = QString::number(invitation.userId);
+        invObj["username"] = invitation.username;
+        invObj["status"] = invitation.status;
+        invObj["timestamp"] = invitation.timestamp.toMSecsSinceEpoch();
+        invitationsArray.append(invObj);
+    }
+
+    QJsonObject response{
+        {"type", Protocol::MessageType::SENT_INVITATIONS_RESPONSE},
+        {"invitations", invitationsArray},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+
+    qDebug() << "Sending sent invitations response with" << invitationsArray.size() << "invitations";
+    sendResponse(QJsonDocument(response).toJson());
+}
+
+void ClientSession::handleCancelFriendRequest(const QJsonObject& json) {
+    int requestId = json["request_id"].toInt();
+
+    if (requestId <= 0 || userId <= 0) {
+        sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
+                                       "Invalid request ID")).toJson());
+        qWarning() << "Invalid cancel friend request received - requestId:" << requestId;
+        return;
+    }
+
+    quint32 targetUserId = dbManager->getFriendRequestTargetUserId(userId, requestId);
+
+    if (dbManager->cancelFriendInvitation(userId, requestId)) {
+        QJsonObject response = Protocol::MessageStructure::createCancelFriendRequestResponse(
+            true, "Friend request cancelled successfully");
+        sendResponse(QJsonDocument(response).toJson());
+
+        if (targetUserId > 0) {
+            ClientSession* targetSession = ActiveSessions::getInstance().getSession(targetUserId);
+            if (targetSession) {
+                QJsonObject notification = Protocol::MessageStructure::createFriendRequestCancelledNotification(
+                    requestId, userId);
+                targetSession->sendResponse(QJsonDocument(notification).toJson());
+            }
+        }
+
+        qDebug() << "Successfully cancelled friend request" << requestId
+                 << "from user" << userId << "to user" << targetUserId;
+    } else {
+        sendResponse(QJsonDocument(Protocol::MessageStructure::createCancelFriendRequestResponse(
+                                       false, "Failed to cancel friend request")).toJson());
+        qWarning() << "Failed to cancel friend request" << requestId << "for user" << userId;
+    }
+}
+
+void ClientSession::handleFriendRequestAccept(const QJsonObject& json) {
+    int requestId = json["request_id"].toInt();
+
+    if (requestId <= 0 || userId <= 0) {
+        sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
+                                       "Invalid request ID")).toJson());
+        return;
+    }
+
+    if (dbManager->acceptFriendInvitation(userId, requestId)) {
+        QJsonObject response = Protocol::MessageStructure::createFriendRequestAcceptResponse(
+            true, "Friend request accepted successfully");
+        sendResponse(QJsonDocument(response).toJson());
+
+        auto invitations = dbManager->getReceivedInvitations(userId);
+        for (const auto& inv : invitations) {
+            if (inv.requestId == requestId) {
+                ClientSession* otherUserSession = ActiveSessions::getInstance().getSession(inv.userId);
+                if (otherUserSession) {
+                    QJsonObject notification = Protocol::MessageStructure::createFriendRequestAcceptedNotification(
+                        userId,
+                        dbManager->getUserUsername(userId)
+                        );
+                    otherUserSession->sendResponse(QJsonDocument(notification).toJson());
+                    otherUserSession->handleFriendsListRequest();
+                }
+                break;
+            }
+        }
+
+        handleFriendsListRequest();
+    } else {
+        sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
+                                       "Failed to accept friend request")).toJson());
+    }
+}
+
+void ClientSession::handleFriendRequestReject(const QJsonObject& json) {
+    int requestId = json["request_id"].toInt();
+
+    if (requestId <= 0 || userId <= 0) {
+        sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
+                                       "Invalid request ID")).toJson());
+        return;
+    }
+
+    if (dbManager->rejectFriendInvitation(userId, requestId)) {
+        QJsonObject response = Protocol::MessageStructure::createFriendRequestRejectResponse(
+            true, "Friend request rejected successfully");
+        sendResponse(QJsonDocument(response).toJson());
+    } else {
+        sendResponse(QJsonDocument(Protocol::MessageStructure::createError(
+                                       "Failed to reject friend request")).toJson());
+    }
 }

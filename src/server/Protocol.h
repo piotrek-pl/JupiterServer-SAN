@@ -2,7 +2,7 @@
  * @file Protocol.h
  * @brief Network protocol definition
  * @author piotrek-pl
- * @date 2025-01-24 14:34:23
+ * @date 2025-01-27 01:00:50
  */
 
 #ifndef PROTOCOL_H
@@ -91,6 +91,7 @@ const QString INVITATION_CANCELLED = "invitation_cancelled";
 const QString GET_INVITATIONS = "get_invitations";
 const QString INVITATIONS_LIST = "invitations_list";
 const QString INVITATION_ALREADY_EXISTS = "invitation_already_exists";
+const QString INVITATION_STATUS_CHANGED = "invitation_status_changed";
 }
 
 // Status użytkownika
@@ -161,7 +162,8 @@ const QStringList AUTHENTICATED = {
     MessageType::INVITATION_CANCELLED,
     MessageType::GET_INVITATIONS,
     MessageType::INVITATIONS_LIST,
-    MessageType::INVITATION_ALREADY_EXISTS
+    MessageType::INVITATION_ALREADY_EXISTS,
+    MessageType::INVITATION_STATUS_CHANGED
 };
 
 const QStringList DISCONNECTING = {
@@ -224,11 +226,13 @@ QJsonObject createFriendRequestAcceptedNotification(int userId, const QString& u
 QJsonObject createFriendRequestCancelledNotification(int requestId, int fromUserId);
 
 // Invitation System
-static QJsonObject createInvitationResponse(bool success, const QString& message = "");
-static QJsonObject createInvitationsList(const QJsonArray& invitations, bool sent = true);
+QJsonObject createInvitationResponse(bool success, const QString& message = "");
+QJsonObject createInvitationsList(const QJsonArray& invitations, bool sent = true);
+QJsonObject createInvitationAlreadyExistsResponse(int userId, const QString& username);
+QJsonObject createInvitationStatusChangedNotification(int requestId, int userId, const QString& status);
+}
 
-} // namespace MessageStructure
-
+// Historia czatu
 namespace ChatHistory {
 const int MESSAGE_BATCH_SIZE = 20;  // ilość wiadomości w jednej paczce
 }
@@ -255,7 +259,7 @@ inline bool isMessageAllowedInState(const QString& messageType, const QString& s
 
     return false;
 }
-} // namespace MessageValidation
+}
 
 // Status zaproszenia
 namespace InvitationStatus {

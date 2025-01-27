@@ -2,7 +2,7 @@
  * @file Protocol.cpp
  * @brief Network protocol implementation
  * @author piotrek-pl
- * @date 2025-01-24 14:35:53
+ * @date 2025-01-27 01:02:05
  */
 
 #include "Protocol.h"
@@ -29,8 +29,7 @@ QJsonObject createNewMessage(const QString& content, int from, qint64 timestamp)
     return message;
 }
 
-QJsonObject createMessageRead(int friendId)
-{
+QJsonObject createMessageRead(int friendId) {
     QJsonObject message;
     message["type"] = Protocol::MessageType::MESSAGE_READ;
     message["friendId"] = friendId;
@@ -297,6 +296,28 @@ QJsonObject createInvitationsList(const QJsonArray& invitations, bool sent) {
     response["sent"] = sent;
     response["timestamp"] = QDateTime::currentMSecsSinceEpoch();
     return response;
+}
+
+QJsonObject createInvitationAlreadyExistsResponse(int userId, const QString& username) {
+    return QJsonObject{
+        {"type", MessageType::INVITATION_ALREADY_EXISTS},
+        {"user_id", userId},
+        {"username", username},
+        {"status", "error"},
+        {"error_code", "INVITATION_ALREADY_EXISTS"},
+        {"message", "Invitation already sent to this user"},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
+}
+
+QJsonObject createInvitationStatusChangedNotification(int requestId, int userId, const QString& status) {
+    return QJsonObject{
+        {"type", MessageType::INVITATION_STATUS_CHANGED},
+        {"request_id", requestId},
+        {"user_id", userId},
+        {"status", status},
+        {"timestamp", QDateTime::currentMSecsSinceEpoch()}
+    };
 }
 
 QJsonObject createFriendRequestAcceptedNotification(int userId, const QString& username) {

@@ -1066,30 +1066,71 @@ bool DatabaseManager::acceptFriendInvitation(quint32 userId, int requestId)
     try {
         QSqlQuery query(database);
 
-        // Pobierz dane zaproszenia
-        query.prepare(DatabaseQueries::Invitations::GET_RECEIVED.arg(userId));
-        query.addBindValue(requestId);
+        // 1. Pobierz informacje o otrzymanym zaproszeniu bez sprawdzania statusu
+        query.prepare(QString("SELECT from_user_id, created_at, status FROM user_%1_received_invitations "
+                              "WHERE request_id = ?")
+                          .arg(userId));
+        query.bindValue(0, requestId);
+
         if (!query.exec() || !query.next()) {
-            throw std::runtime_error("Failed to get invitation details");
+            qWarning() << "Invitation not found";
+            throw std::runtime_error("Invitation not found");
+        }
+
+        QString currentStatus = query.value("status").toString();
+        if (currentStatus != "pending") {
+            qWarning() << "Cannot accept invitation with status:" << currentStatus;
+            throw std::runtime_error("Invitation is not in pending state");
         }
 
         quint32 fromUserId = query.value("from_user_id").toUInt();
+        QDateTime createdAt = query.value("created_at").toDateTime();
 
-        // Aktualizuj status w obu tabelach
-        if (!updateBothInvitationStatuses(fromUserId, userId, requestId, Protocol::InvitationStatus::ACCEPTED)) {
-            throw std::runtime_error("Failed to update invitation statuses");
+        // 2. Zaktualizuj status w tabeli otrzymanych zaproszeń
+        query.prepare(QString("UPDATE user_%1_received_invitations "
+                              "SET status = ? "
+                              "WHERE request_id = ?")
+                          .arg(userId));
+        query.bindValue(0, Protocol::InvitationStatus::ACCEPTED);
+        query.bindValue(1, requestId);
+
+        if (!query.exec() || query.numRowsAffected() == 0) {
+            qWarning() << "Failed to update received invitation:" << query.lastError().text();
+            throw std::runtime_error("Failed to update received invitation");
         }
 
-        // Dodaj relację znajomych
-        if (!addFriend(userId, fromUserId) || !addFriend(fromUserId, userId)) {
-            throw std::runtime_error("Failed to create friend relationship");
+        // 3. Znajdź i zaktualizuj odpowiednie zaproszenie w tabeli wysłanych
+        query.prepare(QString("UPDATE user_%1_sent_invitations "
+                              "SET status = ? "
+                              "WHERE to_user_id = ? "
+                              "AND created_at = ?")
+                          .arg(fromUserId));
+        query.bindValue(0, Protocol::InvitationStatus::ACCEPTED);
+        query.bindValue(1, userId);
+        query.bindValue(2, createdAt);
+
+        if (!query.exec() || query.numRowsAffected() == 0) {
+            qWarning() << "Failed to update sent invitation:" << query.lastError().text();
+            throw std::runtime_error("Failed to update sent invitation");
+        }
+
+        // 4. Dodaj relację znajomych w obie strony
+        if (!addFriend(userId, fromUserId)) {
+            qWarning() << "Failed to add friend relationship (user->friend)";
+            throw std::runtime_error("Failed to create friend relationship (user->friend)");
+        }
+        if (!addFriend(fromUserId, userId)) {
+            qWarning() << "Failed to add friend relationship (friend->user)";
+            throw std::runtime_error("Failed to create friend relationship (friend->user)");
         }
 
         if (!database.commit()) {
             throw std::runtime_error("Failed to commit accepting invitation");
         }
 
-        qDebug() << "Successfully accepted invitation" << requestId << "for user" << userId;
+        qDebug() << "Successfully accepted invitation" << requestId
+                 << "from user" << fromUserId
+                 << "to user" << userId;
         return true;
     }
     catch (const std::exception& e) {
@@ -1114,25 +1155,41 @@ bool DatabaseManager::rejectFriendInvitation(quint32 userId, int requestId)
     try {
         QSqlQuery query(database);
 
-        // Pobierz dane zaproszenia
-        query.prepare(DatabaseQueries::Invitations::GET_RECEIVED.arg(userId));
-        query.addBindValue(requestId);
+        // 1. Pobierz informacje o otrzymanym zaproszeniu
+        query.prepare(DatabaseQueries::Invitations::GET_RECEIVED_INVITATION_DETAILS.arg(userId));
+        query.bindValue(0, requestId);
+
         if (!query.exec() || !query.next()) {
-            throw std::runtime_error("Failed to get invitation details");
+            throw std::runtime_error("Received invitation not found or not pending");
         }
 
-        quint32 fromUserId = query.value("from_user_id").toUInt();
+        quint32 fromUserId = query.value(0).toUInt();
+        QDateTime createdAt = query.value(1).toDateTime();
 
-        // Aktualizuj status w obu tabelach
-        if (!updateBothInvitationStatuses(fromUserId, userId, requestId, Protocol::InvitationStatus::REJECTED)) {
-            throw std::runtime_error("Failed to update invitation statuses");
+        // 2. Zaktualizuj status w tabeli otrzymanych zaproszeń
+        query.prepare(DatabaseQueries::Invitations::UPDATE_RECEIVED_INVITATION_STATUS_REJECTED.arg(userId));
+        query.bindValue(0, requestId);
+
+        if (!query.exec() || query.numRowsAffected() == 0) {
+            throw std::runtime_error("Failed to update received invitation");
+        }
+
+        // 3. Znajdź i zaktualizuj odpowiednie zaproszenie w tabeli wysłanych
+        query.prepare(DatabaseQueries::Invitations::UPDATE_INVITATION_STATUS_REJECTED.arg(fromUserId));
+        query.bindValue(0, userId);
+        query.bindValue(1, createdAt);
+
+        if (!query.exec() || query.numRowsAffected() == 0) {
+            throw std::runtime_error("Failed to update sent invitation");
         }
 
         if (!database.commit()) {
             throw std::runtime_error("Failed to commit rejecting invitation");
         }
 
-        qDebug() << "Successfully rejected invitation" << requestId << "for user" << userId;
+        qDebug() << "Successfully rejected invitation" << requestId
+                 << "from user" << fromUserId
+                 << "to user" << userId;
         return true;
     }
     catch (const std::exception& e) {
@@ -1259,24 +1316,48 @@ bool DatabaseManager::updateBothInvitationStatuses(quint32 fromUserId, quint32 t
     }
 
     try {
-        // Aktualizuj status w tabeli wysłanych zaproszeń
-        if (!updateInvitationStatus(fromUserId, requestId, status, true)) {
-            throw std::runtime_error("Failed to update sent invitation status");
+        QSqlQuery query(database);
+
+        // 1. Pobierz informacje o zaproszeniu z tabeli wysłanych
+        query.prepare(DatabaseQueries::Invitations::GET_SENT_INVITATION_DETAILS.arg(fromUserId));
+        query.bindValue(0, requestId);
+
+        if (!query.exec() || !query.next()) {
+            throw std::runtime_error("Sent invitation not found or not pending");
         }
 
-        // Aktualizuj status w tabeli otrzymanych zaproszeń
-        if (!updateInvitationStatus(toUserId, requestId, status, false)) {
-            throw std::runtime_error("Failed to update received invitation status");
+        toUserId = query.value(0).toUInt();
+        QDateTime createdAt = query.value(1).toDateTime();
+
+        // 2. Aktualizuj status w tabeli wysłanych zaproszeń
+        query.prepare(DatabaseQueries::Invitations::UPDATE_SENT_INVITATION_STATUS.arg(fromUserId));
+        query.bindValue(0, status);
+        query.bindValue(1, requestId);
+
+        if (!query.exec() || query.numRowsAffected() == 0) {
+            throw std::runtime_error("Failed to update sent invitation");
+        }
+
+        // 3. Znajdź i zaktualizuj odpowiednie zaproszenie w tabeli otrzymanych
+        query.prepare(DatabaseQueries::Invitations::UPDATE_RECEIVED_INVITATION_STATUS_BY_TIMESTAMP.arg(toUserId));
+        query.bindValue(0, status);
+        query.bindValue(1, fromUserId);
+        query.bindValue(2, createdAt);
+
+        if (!query.exec() || query.numRowsAffected() == 0) {
+            throw std::runtime_error("Failed to update received invitation");
         }
 
         if (!database.commit()) {
-            throw std::runtime_error("Failed to commit invitation status updates");
+            throw std::runtime_error("Failed to commit invitation updates");
         }
 
+        qDebug() << "Successfully updated invitation statuses from user" << fromUserId
+                 << "to user" << toUserId << "with status:" << status;
         return true;
     }
     catch (const std::exception& e) {
-        qWarning() << "Error updating both invitation statuses:" << e.what();
+        qWarning() << "Error updating invitation statuses:" << e.what();
         database.rollback();
         return false;
     }

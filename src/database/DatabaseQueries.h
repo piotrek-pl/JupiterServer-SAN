@@ -298,6 +298,54 @@ const QString ADD_FRIEND_REQUEST_RECEIVED =
 // Pobieranie nazwy użytkownika dla zaproszenia
 const QString GET_USERNAME_FOR_INVITATION =
     "SELECT username FROM users WHERE id = ?";
+
+const QString GET_SENT_INVITATION_DETAILS =
+    "SELECT to_user_id, created_at FROM user_%1_sent_invitations "
+    "WHERE request_id = ? AND status = 'pending'";
+
+const QString UPDATE_SENT_INVITATION_STATUS =
+    "UPDATE user_%1_sent_invitations "
+    "SET status = ? "
+    "WHERE request_id = ? AND status = 'pending'";
+
+const QString UPDATE_RECEIVED_INVITATION_STATUS =
+    "UPDATE user_%1_received_invitations "
+    "SET status = ? "
+    "WHERE request_id = ? AND status = 'pending'";
+
+const QString UPDATE_RECEIVED_INVITATION_STATUS_BY_TIMESTAMP =
+    "UPDATE user_%1_received_invitations "
+    "SET status = ? "
+    "WHERE from_user_id = ? "
+    "AND created_at = ? "
+    "AND status = 'pending'";
+
+const QString GET_RECEIVED_INVITATION_DETAILS =
+    "SELECT from_user_id, created_at, status FROM user_%1_received_invitations "
+    "WHERE request_id = ?";
+
+const QString UPDATE_INVITATION_STATUS_REJECTED =
+    "UPDATE user_%1_sent_invitations "
+    "SET status = 'rejected' "
+    "WHERE to_user_id = ? "
+    "AND created_at = ? "
+    "AND status = 'pending'";
+
+const QString UPDATE_RECEIVED_INVITATION_STATUS_REJECTED =
+    "UPDATE user_%1_received_invitations "
+    "SET status = 'rejected' "
+    "WHERE request_id = ? AND status = 'pending'";
+
+const QString UPDATE_RECEIVED_INVITATION_STATUS_SIMPLE =
+    "UPDATE user_%1_received_invitations "
+    "SET status = ? "
+    "WHERE request_id = ?";
+
+const QString UPDATE_SENT_INVITATION_STATUS_SIMPLE =
+    "UPDATE user_%1_sent_invitations "
+    "SET status = ? "
+    "WHERE to_user_id = ? "
+    "AND created_at = ?";
 }
 
 } // namespace DatabaseQueries

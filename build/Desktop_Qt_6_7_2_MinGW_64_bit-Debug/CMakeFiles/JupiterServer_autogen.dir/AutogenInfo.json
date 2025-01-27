@@ -215,18 +215,6 @@
 			null
 		],
 		[
-			"D:/programowanie/Qt/SAN/JupiterServer/src/models/Message.h",
-			"MU",
-			"M4YTXQ7V2H/moc_Message.cpp",
-			null
-		],
-		[
-			"D:/programowanie/Qt/SAN/JupiterServer/src/models/User.h",
-			"MU",
-			"M4YTXQ7V2H/moc_User.cpp",
-			null
-		],
-		[
 			"D:/programowanie/Qt/SAN/JupiterServer/src/network/NotificationManager.h",
 			"MU",
 			"UFQQIFJZKK/moc_NotificationManager.cpp",
@@ -341,16 +329,6 @@
 			null
 		],
 		[ "D:/programowanie/Qt/SAN/JupiterServer/src/main.cpp", "MU", null ],
-		[
-			"D:/programowanie/Qt/SAN/JupiterServer/src/models/Message.cpp",
-			"MU",
-			null
-		],
-		[
-			"D:/programowanie/Qt/SAN/JupiterServer/src/models/User.cpp",
-			"MU",
-			null
-		],
 		[
 			"D:/programowanie/Qt/SAN/JupiterServer/src/network/NotificationManager.cpp",
 			"MU",

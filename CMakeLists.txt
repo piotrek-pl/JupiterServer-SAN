@@ -36,8 +36,8 @@ set(PROJECT_SOURCES
     src/server/ClientSession.cpp
     src/database/DatabaseManager.cpp
     src/database/DatabaseQueries.cpp
-    src/models/User.cpp
-    src/models/Message.cpp
+
+
     src/network/NotificationManager.cpp
     src/network/Protocol.cpp
 )
@@ -48,8 +48,8 @@ set(PROJECT_HEADERS
     src/server/ClientSession.h
     src/database/DatabaseManager.h
     src/database/DatabaseQueries.h
-    src/models/User.h
-    src/models/Message.h
+
+
     src/network/NotificationManager.h
     src/network/Protocol.h
 )

@@ -1066,10 +1066,8 @@ bool DatabaseManager::acceptFriendInvitation(quint32 userId, int requestId)
     try {
         QSqlQuery query(database);
 
-        // 1. Pobierz informacje o otrzymanym zaproszeniu bez sprawdzania statusu
-        query.prepare(QString("SELECT from_user_id, created_at, status FROM user_%1_received_invitations "
-                              "WHERE request_id = ?")
-                          .arg(userId));
+        // 1. Pobierz informacje o otrzymanym zaproszeniu
+        query.prepare(DatabaseQueries::Invitations::GET_FRIEND_INVITATION_INFO.arg(userId));
         query.bindValue(0, requestId);
 
         if (!query.exec() || !query.next()) {
@@ -1087,10 +1085,7 @@ bool DatabaseManager::acceptFriendInvitation(quint32 userId, int requestId)
         QDateTime createdAt = query.value("created_at").toDateTime();
 
         // 2. Zaktualizuj status w tabeli otrzymanych zaproszeń
-        query.prepare(QString("UPDATE user_%1_received_invitations "
-                              "SET status = ? "
-                              "WHERE request_id = ?")
-                          .arg(userId));
+        query.prepare(DatabaseQueries::Invitations::UPDATE_RECEIVED_INVITATION_STATUS_ACCEPT.arg(userId));
         query.bindValue(0, Protocol::InvitationStatus::ACCEPTED);
         query.bindValue(1, requestId);
 
@@ -1099,12 +1094,8 @@ bool DatabaseManager::acceptFriendInvitation(quint32 userId, int requestId)
             throw std::runtime_error("Failed to update received invitation");
         }
 
-        // 3. Znajdź i zaktualizuj odpowiednie zaproszenie w tabeli wysłanych
-        query.prepare(QString("UPDATE user_%1_sent_invitations "
-                              "SET status = ? "
-                              "WHERE to_user_id = ? "
-                              "AND created_at = ?")
-                          .arg(fromUserId));
+        // 3. Zaktualizuj status w tabeli wysłanych zaproszeń
+        query.prepare(DatabaseQueries::Invitations::UPDATE_SENT_INVITATION_STATUS_ACCEPT.arg(fromUserId));
         query.bindValue(0, Protocol::InvitationStatus::ACCEPTED);
         query.bindValue(1, userId);
         query.bindValue(2, createdAt);
@@ -1124,13 +1115,28 @@ bool DatabaseManager::acceptFriendInvitation(quint32 userId, int requestId)
             throw std::runtime_error("Failed to create friend relationship (friend->user)");
         }
 
+        // 5. Utwórz tabelę czatu
+        // 5. Utwórz tabelę czatu
+        quint32 smallerId = qMin(userId, fromUserId);
+        quint32 largerId = qMax(userId, fromUserId);
+        QString chatTableName = QString("chat_%1_%2").arg(smallerId).arg(largerId);
+
+        // Tworzenie tabeli czatu używając zdefiniowanego zapytania z namespace Create
+        query.prepare(DatabaseQueries::Create::CHAT_TABLE.arg(chatTableName));
+
+        if (!query.exec()) {
+            qWarning() << "Failed to create chat table:" << query.lastError().text();
+            throw std::runtime_error("Failed to create chat table");
+        }
+
         if (!database.commit()) {
             throw std::runtime_error("Failed to commit accepting invitation");
         }
 
         qDebug() << "Successfully accepted invitation" << requestId
                  << "from user" << fromUserId
-                 << "to user" << userId;
+                 << "to user" << userId
+                 << "and created chat table:" << chatTableName;
         return true;
     }
     catch (const std::exception& e) {

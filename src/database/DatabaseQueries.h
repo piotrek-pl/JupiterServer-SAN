@@ -346,6 +346,47 @@ const QString UPDATE_SENT_INVITATION_STATUS_SIMPLE =
     "SET status = ? "
     "WHERE to_user_id = ? "
     "AND created_at = ?";
+
+const QString GET_RECEIVED_INVITATION_FOR_ACCEPT =
+    "SELECT from_user_id, created_at, status "
+    "FROM user_%1_received_invitations "
+    "WHERE request_id = ?";
+
+const QString UPDATE_RECEIVED_INVITATION_ACCEPT =
+    "UPDATE user_%1_received_invitations "
+    "SET status = 'accepted' "
+    "WHERE request_id = ?";
+
+const QString UPDATE_SENT_INVITATION_ACCEPT =
+    "UPDATE user_%1_sent_invitations "
+    "SET status = 'accepted' "
+    "WHERE to_user_id = ? "
+    "AND created_at = ?";
+
+const QString GET_FRIEND_INVITATION_INFO =
+    "SELECT from_user_id, created_at, status FROM user_%1_received_invitations "
+    "WHERE request_id = ?";
+
+const QString UPDATE_RECEIVED_INVITATION_STATUS_ACCEPT =
+    "UPDATE user_%1_received_invitations "
+    "SET status = ? "
+    "WHERE request_id = ?";
+
+const QString UPDATE_SENT_INVITATION_STATUS_ACCEPT =
+    "UPDATE user_%1_sent_invitations "
+    "SET status = ? "
+    "WHERE to_user_id = ? "
+    "AND created_at = ?";
+
+const QString CREATE_CHAT_TABLE =
+    "CREATE TABLE IF NOT EXISTS %1 ("
+    "message_id INT AUTO_INCREMENT PRIMARY KEY, "
+    "sender_id INT NOT NULL, "
+    "message TEXT NOT NULL, "
+    "sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+    "read_at TIMESTAMP NULL DEFAULT NULL, "
+    "FOREIGN KEY (sender_id) REFERENCES users(id)"
+    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 }
 
 } // namespace DatabaseQueries

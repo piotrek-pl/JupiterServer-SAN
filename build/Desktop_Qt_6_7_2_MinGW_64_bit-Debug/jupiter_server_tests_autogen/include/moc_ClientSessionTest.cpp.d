@@ -4,10 +4,12 @@ D:/programowanie/Qt/SAN/JupiterServer/build/Desktop_Qt_6_7_2_MinGW_64_bit-Debug/
   C:/Qt/6.7.2/mingw_64/include/QtCore/QByteArray \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QDateTime \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QDeadlineTimer \
+  C:/Qt/6.7.2/mingw_64/include/QtCore/QElapsedTimer \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QFlags \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QHash \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QIODevice \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QJsonArray \
+  C:/Qt/6.7.2/mingw_64/include/QtCore/QJsonDocument \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QJsonObject \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QList \
   C:/Qt/6.7.2/mingw_64/include/QtCore/QMap \

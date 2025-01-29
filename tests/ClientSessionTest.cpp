@@ -97,15 +97,10 @@ void ClientSessionTest::init()
     socket = new TestSocket(this);
     QVERIFY(socket != nullptr);
 
-    // Upewnij się, że socket jest w odpowiednim stanie
-    QVERIFY(socket->isValid());
+    socket->clearResponses(); // Wyczyść poprzednie odpowiedzi
 
     session = new ClientSession(socket, dbManager, this);
     qDebug() << "New client session created";
-
-    // Najpierw zaloguj użytkownika
-    QJsonObject loginMsg = Protocol::MessageStructure::createLoginRequest("testuser", "testpass");
-    socket->simulateReceive(QJsonDocument(loginMsg).toJson());
 }
 
 void ClientSessionTest::cleanup()
@@ -125,23 +120,48 @@ void ClientSessionTest::testConnectionInitialization()
 
 void ClientSessionTest::testAuthentication()
 {
+    qDebug() << "[TEST] Starting authentication test";
+
     // Przygotowanie wiadomości logowania
     QJsonObject loginMsg = createLoginMessage("testuser", "testpass");
     QByteArray data = QJsonDocument(loginMsg).toJson();
 
+    // Wyczyść poprzednie dane
+    socket->lastWrittenData.clear();
+
+    qDebug() << "[TEST] Sending login message";
+
     // Symulacja otrzymania danych
     socket->simulateReceive(data);
 
-    // Weryfikacja odpowiedzi
+    // Zwiększmy timeout do 5 sekund dla debugowania
+    qDebug() << "[TEST] Waiting for login response";
+    if (!socket->waitForResponse(5000)) {
+        qDebug() << "[TEST] No response received within timeout";
+        QFAIL("Timeout waiting for login response");
+    }
+
+    qDebug() << "[TEST] Received response, verifying";
     verifyResponse(socket->lastWrittenData, Protocol::MessageType::LOGIN_RESPONSE);
 
-    // Sprawdzenie nieprawidłowego logowania
+    // Test nieprawidłowego logowania
+    socket->lastWrittenData.clear();
     loginMsg = createLoginMessage("wronguser", "wrongpass");
     data = QJsonDocument(loginMsg).toJson();
+
+    qDebug() << "[TEST] Sending invalid login message";
     socket->simulateReceive(data);
+
+    qDebug() << "[TEST] Waiting for error response";
+    if (!socket->waitForResponse(5000)) {
+        qDebug() << "[TEST] No error response received within timeout";
+        QFAIL("Timeout waiting for error response");
+    }
+
+    qDebug() << "[TEST] Received error response, verifying";
     verifyResponse(socket->lastWrittenData, Protocol::MessageType::ERROR);
 
-    qDebug() << "Authentication test passed";
+    qDebug() << "[TEST] Authentication test completed successfully";
 }
 
 void ClientSessionTest::testMessageHandling()
@@ -150,14 +170,24 @@ void ClientSessionTest::testMessageHandling()
     // Najpierw zaloguj
     QVERIFY(dbManager->authenticateUser("testuser", "testpass", userId));
 
+    // Wyczyść poprzednie dane
+    socket->lastWrittenData.clear();
+
+    // Logowanie
     QJsonObject loginMsg = createLoginMessage("testuser", "testpass");
     socket->simulateReceive(QJsonDocument(loginMsg).toJson());
+    QVERIFY2(socket->waitForResponse(), "Timeout waiting for login response");
+
+    // Wyczyść odpowiedź logowania
+    socket->lastWrittenData.clear();
 
     // Wyślij wiadomość
     QJsonObject chatMsg = createChatMessage(userId, "Test message");
     socket->simulateReceive(QJsonDocument(chatMsg).toJson());
 
+    QVERIFY2(socket->waitForResponse(), "Timeout waiting for message response");
     verifyResponse(socket->lastWrittenData, Protocol::MessageType::MESSAGE_ACK);
+
     qDebug() << "Message handling test passed";
 }
 
@@ -166,6 +196,9 @@ void ClientSessionTest::testPingPongMechanism()
 {
     QVERIFY(socket != nullptr);
     qDebug() << "Starting ping/pong test...";
+
+    // Wyczyść poprzednie dane
+    socket->lastWrittenData.clear();
 
     // Przygotuj wiadomość ping
     QJsonObject pingMsg = Protocol::MessageStructure::createPing();
@@ -176,6 +209,9 @@ void ClientSessionTest::testPingPongMechanism()
 
     // Symuluj otrzymanie wiadomości ping
     socket->simulateReceive(message);
+
+    // Czekaj na odpowiedź
+    QVERIFY2(socket->waitForResponse(), "Timeout waiting for ping response");
 
     // Sprawdź odpowiedź
     QByteArray response = socket->lastWrittenData;
@@ -197,6 +233,10 @@ void ClientSessionTest::testPingPongMechanism()
 void ClientSessionTest::testStatusUpdate()
 {
     quint32 userId;
+    qDebug() << QString("[%1] Starting status update test for user %2")
+                    .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"))
+                    .arg("piotrek-pl");
+
     // Najpierw zaloguj
     QVERIFY(dbManager->authenticateUser("testuser", "testpass", userId));
 
@@ -205,31 +245,48 @@ void ClientSessionTest::testStatusUpdate()
     QVERIFY(dbManager->getUserStatus(userId, status));
     QCOMPARE(status, QString("online"));
 
-    qDebug() << "Status update test passed";
+    qDebug() << QString("[%1] Status update test passed for user %2")
+                    .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"))
+                    .arg("piotrek-pl");
 }
 
 void ClientSessionTest::testMessageAcknowledgement()
 {
     quint32 userId;
+    qDebug() << QString("[%1] Starting message acknowledgement test for user %2")
+                    .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"))
+                    .arg("piotrek-pl");
+
     // Zaloguj użytkownika
     QVERIFY(dbManager->authenticateUser("testuser", "testpass", userId));
 
+    socket->lastWrittenData.clear();
+
     QJsonObject loginMsg = createLoginMessage("testuser", "testpass");
     socket->simulateReceive(QJsonDocument(loginMsg).toJson());
+    QVERIFY2(socket->waitForResponse(), "Timeout waiting for login response");
+
+    socket->lastWrittenData.clear();
 
     // Wyślij wiadomość
     QJsonObject chatMsg = createChatMessage(userId, "Test message");
     socket->simulateReceive(QJsonDocument(chatMsg).toJson());
+    QVERIFY2(socket->waitForResponse(), "Timeout waiting for chat message response");
 
     // Pobierz ID wiadomości z odpowiedzi
     QJsonDocument response = QJsonDocument::fromJson(socket->lastWrittenData);
     QString messageId = response.object()["message_id"].toString();
 
+    socket->lastWrittenData.clear();
+
     // Wyślij potwierdzenie
     QJsonObject ackMsg = Protocol::MessageStructure::createMessageAck(messageId);
     socket->simulateReceive(QJsonDocument(ackMsg).toJson());
+    QVERIFY2(socket->waitForResponse(), "Timeout waiting for ack response");
 
-    qDebug() << "Message acknowledgement test passed";
+    qDebug() << QString("[%1] Message acknowledgement test passed for user %2")
+                    .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"))
+                    .arg("piotrek-pl");
 }
 
 // Helper methods
@@ -245,22 +302,50 @@ QJsonObject ClientSessionTest::createChatMessage(int receiverId, const QString& 
 
 void ClientSessionTest::verifyResponse(const QByteArray& response, const QString& expectedType)
 {
-    if (response.isEmpty()) {
-        qWarning() << "Empty response received";
-        QFAIL("Empty response received");
+    QByteArray targetResponse = static_cast<TestSocket*>(socket)->getResponse(expectedType);
+
+    if (targetResponse.isEmpty()) {
+        QString errorMsg = QString("[%1] No response of type '%2' received for user %3")
+        .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"))
+            .arg(expectedType)
+            .arg("piotrek-pl");
+        qWarning() << errorMsg;
+        qWarning() << "Available responses:";
+        for (const QByteArray& resp : static_cast<TestSocket*>(socket)->writtenData) {
+            qWarning() << QString::fromUtf8(resp);
+        }
+        QFAIL(qPrintable(errorMsg));
     }
 
-    QJsonDocument doc = QJsonDocument::fromJson(response);
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(targetResponse, &parseError);
     if (doc.isNull()) {
-        qWarning() << "Invalid JSON response:" << response;
-        QFAIL("Invalid JSON response");
+        QString errorMsg = QString("[%1] Invalid JSON response for user %2: %3\nResponse: %4")
+        .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"))
+            .arg("piotrek-pl")
+            .arg(parseError.errorString())
+            .arg(QString::fromUtf8(targetResponse));
+        qWarning() << errorMsg;
+        QFAIL(qPrintable(errorMsg));
     }
-
-    QVERIFY(doc.isObject());
 
     QJsonObject obj = doc.object();
-    QVERIFY(obj.contains("type"));
-    QCOMPARE(obj["type"].toString(), expectedType);
+    QString actualType = obj["type"].toString();
+    if (actualType != expectedType) {
+        QString errorMsg = QString("[%1] Response type mismatch for user %2\nExpected: %3\nActual: %4\nFull response: %5")
+        .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"))
+            .arg("piotrek-pl")
+            .arg(expectedType)
+            .arg(actualType)
+            .arg(QString::fromUtf8(targetResponse));
+        qWarning() << errorMsg;
+        QFAIL(qPrintable(errorMsg));
+    }
+
+    qDebug() << QString("[%1] Verified response for user %2: %3")
+                    .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"))
+                    .arg("piotrek-pl")
+                    .arg(QString::fromUtf8(targetResponse));
 }
 
 #include "moc_ClientSessionTest.cpp"

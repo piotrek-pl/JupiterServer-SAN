@@ -95,9 +95,21 @@ ClientSession::~ClientSession()
 
 void ClientSession::handleReadyRead()
 {
-    if (!socket->bytesAvailable()) return;
+    qDebug() << "SERVER: handleReadyRead called, bytes available:"
+             << socket->bytesAvailable();
 
-    buffer.append(socket->readAll());
+    if (!socket->bytesAvailable()) {
+        qDebug() << "SERVER: No bytes available";
+        return;
+    }
+
+    QByteArray newData = socket->readAll();
+    qDebug() << "SERVER: Read" << newData.size() << "bytes:"
+             << QString::fromUtf8(newData);
+
+    buffer.append(newData);
+    qDebug() << "SERVER: Buffer size after append:" << buffer.size();
+
     processBuffer();
 }
 
@@ -228,9 +240,12 @@ void ClientSession::handleLogin(const QJsonObject& json)
     QString username = json["username"].toString();
     QString password = json["password"].toString();
 
+    qDebug() << "SERVER: Processing login request for user:" << username;
+
     if (username.isEmpty() || password.isEmpty()) {
         state = Protocol::SessionState::INITIAL;
-        sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Invalid credentials")).toJson());
+        QJsonObject errorResponse = Protocol::MessageStructure::createError("Invalid credentials");
+        sendResponse(QJsonDocument(errorResponse).toJson());
         return;
     }
 
@@ -238,7 +253,8 @@ void ClientSession::handleLogin(const QJsonObject& json)
     if (!sessionDb.isOpen()) {
         qWarning() << "Session database connection is not open! Attempting to reopen...";
         if (!dbManager->cloneConnectionForThread(sessionConnectionName)) {
-            sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Database connection error")).toJson());
+            QJsonObject errorResponse = Protocol::MessageStructure::createError("Database connection error");
+            sendResponse(QJsonDocument(errorResponse).toJson());
             return;
         }
     }
@@ -247,30 +263,30 @@ void ClientSession::handleLogin(const QJsonObject& json)
         setUserId(userId);
         state = Protocol::SessionState::AUTHENTICATED;
         isAuthenticated = true;
-        statusUpdateTimer.start();
 
-        dbManager->updateUserStatus(userId, "online");
-
-        // Wysyłamy odpowiedź o udanym logowaniu
+        // Najpierw wyślij odpowiedź o udanym logowaniu
         QJsonObject response{
             {"type", Protocol::MessageType::LOGIN_RESPONSE},
             {"status", "success"},
             {"userId", static_cast<int>(userId)},
             {"timestamp", QDateTime::currentMSecsSinceEpoch()}
         };
+
+        qDebug() << "SERVER: Sending login success response for user:" << username;
         sendResponse(QJsonDocument(response).toJson());
 
-        // Wysyłamy informację o nieprzeczytanych wiadomościach
+        // Następnie aktualizuj status i wykonaj pozostałe operacje
+        dbManager->updateUserStatus(userId, "online");
+        statusUpdateTimer.start();
         sendUnreadFromUsers();
-
-        // Wysyłamy listę znajomych (zakładam, że jest realizowane w innym miejscu)
         handleFriendsListRequest();
 
-        qDebug() << "User" << username << "logged in successfully";
+        qDebug() << "SERVER: User" << username << "logged in successfully";
     } else {
         state = Protocol::SessionState::INITIAL;
-        sendResponse(QJsonDocument(Protocol::MessageStructure::createError("Authentication failed")).toJson());
-        qDebug() << "Failed login attempt for user:" << username;
+        QJsonObject errorResponse = Protocol::MessageStructure::createError("Authentication failed");
+        sendResponse(QJsonDocument(errorResponse).toJson());
+        qDebug() << "SERVER: Failed login attempt for user:" << username;
     }
 }
 
@@ -332,8 +348,20 @@ void ClientSession::handlePing(const QJsonObject& message)
     qDebug() << "SERVER: Received PING from client at"
              << QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss.zzz");
 
+    // Aktualizuj czas ostatniego pinga
     lastPingTime = QDateTime::currentMSecsSinceEpoch();
     missedPings = 0;
+
+    // Utwórz i wyślij odpowiedź PONG
+    QJsonObject pongResponse{
+        {"type", Protocol::MessageType::PONG},
+        {"timestamp", message["timestamp"].toInteger()}, // użyj tego samego timestampa co w PING
+    };
+
+    qDebug() << "SERVER: Sending PONG response at"
+             << QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss.zzz");
+
+    sendResponse(QJsonDocument(pongResponse).toJson());
 }
 
 void ClientSession::handleSendMessage(const QJsonObject& json)
@@ -497,18 +525,28 @@ void ClientSession::sendFriendsStatusUpdate()
 
 void ClientSession::processBuffer()
 {
+    qDebug() << "SERVER: Processing buffer of size:" << buffer.size()
+    << "Content:" << QString::fromUtf8(buffer);
+
     bool foundJson;
     do {
         foundJson = false;
         int startPos = buffer.indexOf('{');
+
         if (startPos >= 0) {
+            qDebug() << "SERVER: Found JSON start at position:" << startPos;
+
             int endPos = -1;
             int braceCount = 1;
 
             for (int i = startPos + 1; i < buffer.size(); ++i) {
-                if (buffer[i] == '{') braceCount++;
+                if (buffer[i] == '{') {
+                    braceCount++;
+                    qDebug() << "SERVER: Found nested { at" << i << "brace count:" << braceCount;
+                }
                 else if (buffer[i] == '}') {
                     braceCount--;
+                    qDebug() << "SERVER: Found } at" << i << "brace count:" << braceCount;
                     if (braceCount == 0) {
                         endPos = i;
                         break;
@@ -518,12 +556,28 @@ void ClientSession::processBuffer()
 
             if (endPos > startPos) {
                 QByteArray jsonData = buffer.mid(startPos, endPos - startPos + 1);
-                qDebug() << "SERVER: Processing JSON of size:" << jsonData.size();
+                qDebug() << "SERVER: Extracted JSON:" << QString::fromUtf8(jsonData);
 
-                processMessage(jsonData);
+                // Sprawdź, czy to prawidłowy JSON przed przetworzeniem
+                QJsonParseError parseError;
+                QJsonDocument doc = QJsonDocument::fromJson(jsonData, &parseError);
+                if (parseError.error == QJsonParseError::NoError) {
+                    qDebug() << "SERVER: Valid JSON detected, processing message";
+                    processMessage(jsonData);
+                } else {
+                    qWarning() << "SERVER: Invalid JSON:" << parseError.errorString();
+                }
+
                 buffer.remove(0, endPos + 1);
                 foundJson = true;
+
+                qDebug() << "SERVER: Remaining buffer size after processing:"
+                         << buffer.size();
+            } else {
+                qWarning() << "SERVER: No matching } found for { at position" << startPos;
             }
+        } else {
+            qDebug() << "SERVER: No JSON start marker found in buffer";
         }
     } while (foundJson);
 }

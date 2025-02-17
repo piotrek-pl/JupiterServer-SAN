@@ -56,7 +56,7 @@ public:
     void setConfigPath(const QString& path);
     QSqlDatabase& getDatabase() { return database; }
     bool isInitialized() const { return initialized; }
-    bool cloneConnectionForThread(const QString& connectionName);
+    bool cloneConnection(const QString& connectionName);
     QVector<quint32> getUnreadMessagesUsers(quint32 userId);
 
 #ifdef QT_DEBUG

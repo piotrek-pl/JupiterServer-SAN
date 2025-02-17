@@ -36,7 +36,7 @@ ClientSession::ClientSession(QTcpSocket* socket, DatabaseManager* dbManager, QOb
 
     qDebug() << "Creating new database connection:" << sessionConnectionName;
 
-    if (!dbManager->cloneConnectionForThread(sessionConnectionName)) {
+    if (!dbManager->cloneConnection(sessionConnectionName)) {
         qWarning() << "Failed to create database connection for session:"
                    << sessionConnectionName;
     } else {
@@ -252,7 +252,7 @@ void ClientSession::handleLogin(const QJsonObject& json)
     QSqlDatabase sessionDb = QSqlDatabase::database(sessionConnectionName);
     if (!sessionDb.isOpen()) {
         qWarning() << "Session database connection is not open! Attempting to reopen...";
-        if (!dbManager->cloneConnectionForThread(sessionConnectionName)) {
+        if (!dbManager->cloneConnection(sessionConnectionName)) {
             QJsonObject errorResponse = Protocol::MessageStructure::createError("Database connection error");
             sendResponse(QJsonDocument(errorResponse).toJson());
             return;

@@ -682,7 +682,7 @@ bool DatabaseManager::createFriendsList(quint32 userId)
     }
 }
 
-bool DatabaseManager::cloneConnectionForThread(const QString& connectionName)
+bool DatabaseManager::cloneConnection(const QString& connectionName)
 {
     qDebug() << "Cloning database connection for session:" << connectionName;
 
